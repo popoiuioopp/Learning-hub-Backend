@@ -5,6 +5,8 @@ import (
 	"strings"
 )
 
+var check bool
+
 func EqualFold(s, t string) bool {
 	return strings.EqualFold(s, t)
 }
@@ -27,7 +29,7 @@ func login() {
 		fmt.Scanln(&password)
 
 		// if login sucess
-
+		fmt.Println("Login Sucess!!!!")
 	} else if EqualFold(first, "register") {
 		fmt.Println(">>>>>>>Register")
 		fmt.Println("Username : ")
@@ -50,8 +52,11 @@ func login() {
 		// 	var regisVerifyPass string
 		// 	fmt.Scanln(&regisVerifyPass)
 		// }
+
+		fmt.Println("Register Sucess!!!!")
 	} else {
-		fmt.Println("http://localhost/" + first)
+		fmt.Println("Connecting to Room : " + first)
+		check = true
 	}
 }
 func main() {
@@ -60,7 +65,7 @@ func main() {
 	// display output in the next line
 	for {
 		login()
-		if false {
+		if check {
 			break
 		}
 	}
