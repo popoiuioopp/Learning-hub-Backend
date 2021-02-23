@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"strings"
+
+	"github.com/popoiuioopp/Learning-hub-Backend/server"
 )
 
 func EqualFold(s, t string) bool {
@@ -55,15 +57,18 @@ func login() {
 	}
 }
 func main() {
-	// fmt.Println("Hello World! Tangy Ma Laew")
-	// Println function is used to
-	// display output in the next line
-	for {
-		login()
-		if false {
-			break
+	/*
+		// fmt.Println("Hello World! Tangy Ma Laew")
+		// Println function is used to
+		// display output in the next line
+		for {
+			login()
+			if false {
+				break
+			}
 		}
-	}
-	var wait string
-	fmt.Scanln(&wait)
+		var wait string
+		fmt.Scanln(&wait)
+	*/
+	server.Server()
 }
