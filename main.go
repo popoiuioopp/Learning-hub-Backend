@@ -30,6 +30,11 @@ func login() {
 
 		// if login sucess
 		fmt.Println("Login Sucess!!!!")
+
+		fmt.Println("Create Flashcard or choose Flashcard : ")
+		var userInput string
+		fmt.Scanln(&userInput)
+
 	} else if EqualFold(first, "register") {
 		fmt.Println(">>>>>>>Register")
 		fmt.Println("Username : ")
