@@ -1,13 +1,16 @@
-package server
+package main
 
 import (
 	"fmt"
 	"net/http"
+
+	"github.com/popoiuioopp/Learning-hub-Backend/server/create"
 )
 
-func Server() {
+func main() {
 	http.HandleFunc("/", HelloServer)
 	http.ListenAndServe(":8080", nil)
+	create.Createfc()
 }
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {
