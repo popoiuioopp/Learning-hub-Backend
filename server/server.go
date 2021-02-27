@@ -3,14 +3,18 @@ package main
 import (
 	"fmt"
 	"net/http"
-
-	"github.com/popoiuioopp/Learning-hub-Backend/server/create"
 )
 
 func main() {
 	http.HandleFunc("/", HelloServer)
 	http.ListenAndServe(":8080", nil)
-	create.Createfc()
+	// login sucress
+	// fmt.Println("1.) cfc-Create Flashcard")
+	// var userinput string
+	// fmt.Scanln(&userinput)
+	// if userinput == "cfc" {
+	// 	create.Createfc()
+	// }
 }
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {
