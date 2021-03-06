@@ -23,7 +23,7 @@ func CheckErr(err error) {
 }
 
 // create Flashcard and store in database
-func create() {
+func Create() {
 
 	db, err := sql.Open("mysql", "learninghub:FgTQTzNM62cC63K@tcp(139.59.106.148:3306)/learninghub")
 	CheckErr(err)
