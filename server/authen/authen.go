@@ -1,4 +1,4 @@
-package main
+package authen
 
 import (
 	"database/sql"
@@ -28,47 +28,6 @@ func checkErr(err error) {
 	}
 }
 
-// func Createfc() {
-
-// 	type FlashCard struct {
-// 		Term       string
-// 		Definition string
-// 	}
-
-// 	fmt.Println(">>>>>>>Create FlashCard")
-
-// 	fmt.Println("Flashcard name : ")
-// 	var namefc string
-// 	fmt.Scanln(&namefc)
-
-// 	fmt.Println("Number of Flashcard : ")
-// 	var numfc int
-// 	fmt.Scanln(&numfc)
-// 	var slice []FlashCard
-// 	fmt.Println(slice)
-
-// 	var temp FlashCard
-// 	for i := 0; i < numfc; i++ {
-// 		fmt.Println("Term : ")
-// 		fmt.Scanln(&temp.Term)
-// 		fmt.Println("Definition : ")
-// 		fmt.Scanln(&temp.Definition)
-// 		slice = append(slice, temp)
-// 	}
-// 	fmt.Println(slice)
-// 	fmt.Println(len(slice))
-
-// 	for _, element := range slice {
-// 		// fmt.Println(index, element.Term)
-// 		sqlStatement := `
-// 		INSERT INTO Flashcard_instance(deckId,term,definition,userID)
-// 		VALUES(1,?,?,1)
-// 		`
-// 		_, err := sqliteHandler.Conn.Exec(sqlStatement, element.Term, element.Definition)
-// 		checkErr(err)
-// 	}
-// }
-
 // Create a User object and add to the database
 func createUser() {
 	var usercreate string
@@ -87,7 +46,7 @@ func createUser() {
 
 }
 
-func login() {
+func Login() {
 	fmt.Println("usernamelog : ")
 	var username string
 	fmt.Scanln(&username)
@@ -122,19 +81,19 @@ func login() {
 
 }
 
-func main() {
+// func main() {
 
-	db, err := sql.Open("mysql", "learninghub:FgTQTzNM62cC63K@tcp(139.59.106.148:3306)/learninghub")
-	checkErr(err)
+// 	db, err := sql.Open("mysql", "learninghub:FgTQTzNM62cC63K@tcp(139.59.106.148:3306)/learninghub")
+// 	checkErr(err)
 
-	fmt.Println("Connected to database")
-	sqliteHandler.Conn = db
-	defer db.Close()
-	// createUser("DEARZA", "12345")
-	// fmt.Println("Created successful")
-	Createfc()
-	// createUser()
+// 	fmt.Println("Connected to database")
+// 	sqliteHandler.Conn = db
+// 	defer db.Close()
+// 	// createUser("DEARZA", "12345")
+// 	// fmt.Println("Created successful")
+// 	//login()
+// 	// createUser()
 
-	var quit string
-	fmt.Scanln(&quit)
-}
+// 	var quit string
+// 	fmt.Scanln(&quit)
+// }
