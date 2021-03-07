@@ -8,13 +8,6 @@ import (
 func main() {
 	http.HandleFunc("/", HelloServer)
 	http.ListenAndServe(":8080", nil)
-	// login sucress
-	// fmt.Println("1.) cfc-Create Flashcard")
-	// var userinput string
-	// fmt.Scanln(&userinput)
-	// if userinput == "cfc" {
-	// 	create.Createfc()
-	// }
 }
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {

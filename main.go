@@ -3,9 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+
 )
 
 // SQLHandler refers to the connection to the database.
@@ -24,10 +26,12 @@ type User struct {
 }
 
 //Check for the error
+
 func checkErr(err error) {
 	if err != nil {
 		fmt.Println(err)
 		panic(err.Error())
+
 	}
 }
 
@@ -142,11 +146,11 @@ func login() int {
 	if len(queryResult) != 0 {
 
 		fmt.Println(queryResult)
-		for _, element := range queryResult { //if it is correct then login success
+		for _, element := range queryResult { //if the username match the username in db then login success
 			if element.Username == username && element.Password == password {
 				fmt.Println("Successs loginnnnn")
 			}
-		}
+
 	} else {
 		fmt.Println("Cannot log in")
 	}
@@ -170,3 +174,4 @@ func main() {
 	var quit string
 	fmt.Scanln(&quit)
 }
+
