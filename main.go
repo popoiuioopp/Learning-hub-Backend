@@ -7,7 +7,6 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-
 )
 
 // SQLHandler refers to the connection to the database.
@@ -16,8 +15,7 @@ type SQLHandler struct {
 }
 
 var sqliteHandler SQLHandler
-
-var forcreateuser int
+var forcreateuserid int
 
 // User struct created when there is a signal to create user.
 type User struct {
@@ -36,6 +34,7 @@ func checkErr(err error) {
 	}
 }
 
+//create flashard
 func Createfc() {
 
 	type FlashCard struct {
@@ -67,7 +66,7 @@ func Createfc() {
 	var namefc string
 	var checkid int
 	fmt.Scanln(&namefc)
-	sqlStatement := `SELECT deckId FROM Deck_instance ORDER	BY deckId DESC LIMIT 1`
+	sqlStatement := `SELECT deckId FROM Deck_instance ORDER	BY deckId DESC LIMIT 1` //check the lastest deckId and we will put it in the flashcard table
 	rows, err := sqliteHandler.Conn.Query(sqlStatement)
 	for rows.Next() {
 		err = rows.Scan(&checkid)
@@ -76,7 +75,7 @@ func Createfc() {
 	}
 	checkErr(err)
 
-	fmt.Println("Number of Flashcard : ")
+	fmt.Println("Number of Flashcard : ") //let user choose
 	var numfc int
 	fmt.Scanln(&numfc)
 	var slice []FlashCard
@@ -99,7 +98,7 @@ func Createfc() {
 		INSERT INTO Flashcard_instance(deckId,term,definition,userID)
 		VALUES(?,?,?,?)
 		`
-		_, err := sqliteHandler.Conn.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuser)
+		_, err := sqliteHandler.Conn.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuserid)
 		os.Exit(0)
 		checkErr(err)
 	}
@@ -107,6 +106,7 @@ func Createfc() {
 
 // Create a User object and add to the database
 func createUser() {
+	fmt.Println("lets create your acc")
 	var usercreate string
 	var passcreate string
 
@@ -125,6 +125,8 @@ func createUser() {
 
 func login() int {
 
+	fmt.Println("lets login")
+
 	fmt.Println("usernamelog : ")
 	var username string
 	fmt.Scanln(&username)
@@ -136,7 +138,7 @@ func login() int {
 	rows, err := sqliteHandler.Conn.Query(sqlStatement, username, password)
 	checkErr(err)
 	var queryResult []User
-	for rows.Next() {
+	for rows.Next() { //check rows
 		var tempUser User
 		err = rows.Scan(&tempUser.Username, &tempUser.Password, &tempUser.UserID)
 		checkErr(err)
@@ -146,24 +148,30 @@ func login() int {
 	if len(queryResult) != 0 {
 
 		fmt.Println(queryResult)
-		for _, element := range queryResult {
+		for _, element := range queryResult { //if the username match the username in db then login success
 			if element.Username == username && element.Password == password {
-				fmt.Println("Successs loginnnnn IMPORT BOOSSSSS")
-			} else {
-				fmt.Println("Noooooo")
-
+				fmt.Println("Successs loginnnnn")
 			}
-		}else if usercmd == "register"{
-			//regis
-		}else{
-			//join room
-		}
 
+		}
 	} else {
 		fmt.Println("Cannot log in")
 	}
 	return queryResult[0].UserID
 }
+
+// func checklogin() {
+// 	fmt.Println("Already have an acc??(Y/N)")
+// 	var haveaccornot string
+// 	fmt.Scan(&haveaccornot)
+// 	fmt.Println(haveaccornot)
+// 	if haveaccornot == "Y" {
+// 		login()
+// 	} else {
+// 		createUser()
+// 	}
+
+// }
 
 func main() {
 
@@ -176,11 +184,11 @@ func main() {
 	// createUser("DEARZA", "12345")
 	// fmt.Println("Created successful")
 	// createUser()
-	forcreateuser = login()
-	fmt.Println(forcreateuser)
+	// checklogin()
+	forcreateuserid = login()
+
 	Createfc()
 
 	var quit string
 	fmt.Scanln(&quit)
 }
-
