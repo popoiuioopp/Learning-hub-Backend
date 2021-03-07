@@ -14,7 +14,7 @@ type SQLHandler struct {
 }
 
 var sqliteHandler SQLHandler
-var forcreateuser int
+var forcreateuserid int
 
 // User struct created when there is a signal to create user.
 type User struct {
@@ -31,6 +31,7 @@ func checkErr(err error) {
 	}
 }
 
+//create flashard
 func Createfc() {
 
 	type FlashCard struct {
@@ -62,7 +63,7 @@ func Createfc() {
 	var namefc string
 	var checkid int
 	fmt.Scanln(&namefc)
-	sqlStatement := `SELECT deckId FROM Deck_instance ORDER	BY deckId DESC LIMIT 1`
+	sqlStatement := `SELECT deckId FROM Deck_instance ORDER	BY deckId DESC LIMIT 1` //check the lastest deckId and we will put it in the flashcard table
 	rows, err := sqliteHandler.Conn.Query(sqlStatement)
 	for rows.Next() {
 		err = rows.Scan(&checkid)
@@ -71,7 +72,7 @@ func Createfc() {
 	}
 	checkErr(err)
 
-	fmt.Println("Number of Flashcard : ")
+	fmt.Println("Number of Flashcard : ") //let user choose
 	var numfc int
 	fmt.Scanln(&numfc)
 	var slice []FlashCard
@@ -94,7 +95,7 @@ func Createfc() {
 		INSERT INTO Flashcard_instance(deckId,term,definition,userID)
 		VALUES(?,?,?,?)
 		`
-		_, err := sqliteHandler.Conn.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuser)
+		_, err := sqliteHandler.Conn.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuserid)
 		os.Exit(0)
 		checkErr(err)
 	}
@@ -131,7 +132,7 @@ func login() int {
 	rows, err := sqliteHandler.Conn.Query(sqlStatement, username, password)
 	checkErr(err)
 	var queryResult []User
-	for rows.Next() {
+	for rows.Next() { //check rows
 		var tempUser User
 		err = rows.Scan(&tempUser.Username, &tempUser.Password, &tempUser.UserID)
 		checkErr(err)
@@ -141,11 +142,9 @@ func login() int {
 	if len(queryResult) != 0 {
 
 		fmt.Println(queryResult)
-		for _, element := range queryResult {
+		for _, element := range queryResult { //if it is correct then login success
 			if element.Username == username && element.Password == password {
-				fmt.Println("Successs loginnnnn IMPORT BOOSSSSS")
-			} else {
-				fmt.Println("Noooooo")
+				fmt.Println("Successs loginnnnn")
 			}
 		}
 	} else {
@@ -165,8 +164,7 @@ func main() {
 	// createUser("DEARZA", "12345")
 	// fmt.Println("Created successful")
 	// createUser()
-	forcreateuser = login()
-	fmt.Println(forcreateuser)
+	forcreateuserid = login()
 	Createfc()
 
 	var quit string
