@@ -7,7 +7,6 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-
 )
 
 // SQLHandler refers to the connection to the database.
@@ -107,6 +106,7 @@ func Createfc() {
 
 // Create a User object and add to the database
 func createUser() {
+	fmt.Println("lets create your acc")
 	var usercreate string
 	var passcreate string
 
@@ -124,6 +124,8 @@ func createUser() {
 }
 
 func login() int {
+
+	fmt.Println("lets login")
 
 	fmt.Println("usernamelog : ")
 	var username string
@@ -151,11 +153,25 @@ func login() int {
 				fmt.Println("Successs loginnnnn")
 			}
 
+		}
 	} else {
 		fmt.Println("Cannot log in")
 	}
 	return queryResult[0].UserID
 }
+
+// func checklogin() {
+// 	fmt.Println("Already have an acc??(Y/N)")
+// 	var haveaccornot string
+// 	fmt.Scan(&haveaccornot)
+// 	fmt.Println(haveaccornot)
+// 	if haveaccornot == "Y" {
+// 		login()
+// 	} else {
+// 		createUser()
+// 	}
+
+// }
 
 func main() {
 
@@ -168,10 +184,11 @@ func main() {
 	// createUser("DEARZA", "12345")
 	// fmt.Println("Created successful")
 	// createUser()
+	// checklogin()
 	forcreateuserid = login()
+
 	Createfc()
 
 	var quit string
 	fmt.Scanln(&quit)
 }
-
