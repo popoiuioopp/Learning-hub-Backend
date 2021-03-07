@@ -20,3 +20,6 @@ CREATE TABLE Deck_instance (
 	deckName varchar(50) not null, 
 	dateCreate DATETIME
 );
+
+
+ALTER TABLE `Flashcard_instance` ADD CONSTRAINT deckId FOREIGN KEY (`deckId`) REFERENCES `Deck_instance` (`deckId`);

@@ -1,12 +1,9 @@
-package main
+package cache
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
-
-	_ "github.com/go-sql-driver/mysql"
-
-	"database/sql"
 
 	"github.com/go-redis/redis"
 )
@@ -27,31 +24,22 @@ var sqliteHandler SQLHandler
 
 // User struct created when there is a signal to create user.
 type User struct {
-	UserID   int    `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	UserID   int    `json:"id"`
+}
+
+type Deck struct {
+	DeckID     int         `json:"id"`
+	DeckName   string      `json:"name"`
+	NoFC       int         `json:"number"`
+	FlashCards []FlashCard `json:"FlashCards"`
 }
 
 //FlashCard struct for containing the FlashCard
 type FlashCard struct {
-	FlashCardID int    `json:"id"`
-	Term        string `json:"term"`
-	Definition  string `json:"definition"`
-}
-
-func main() {
-	redisHandler.Client = NewClient()
-
-	result, err := ping(redisHandler.Client)
-	checkErr(err)
-	fmt.Println(result)
-
-	err = addUsr(redisHandler.Client, 1, "Boooosss", "password")
-	checkErr(err)
-	result, err = checkUsr(redisHandler.Client, 1)
-	checkErr(err)
-
-	fmt.Println(result)
+	Term       string `json:"term"`
+	Definition string `json:"defintion"`
 }
 
 //Check for the error
@@ -105,4 +93,44 @@ func checkUsr(client *redis.Client, userID int) (string, error) {
 	checkErr(err)
 
 	return val, err
+}
+
+func RedisAddDeck(client *redis.Client, deck Deck) {
+	deckKey := fmt.Sprintf("deck,%d", deck.DeckID)
+
+	temp, err := json.Marshal(deck)
+	checkErr(err)
+
+	_, err = client.Get(deckKey).Result()
+
+	if err == redis.Nil {
+		err = client.Set(deckKey, temp, 0).Err()
+		checkErr(err)
+	}
+
+}
+
+func ReadDeck(client *redis.Client, db *sql.DB, id int) (string, error) {
+	result, err := client.Get(fmt.Sprintf("deck,%d", id)).Result()
+	var redisInstanceDeck Deck
+	if err == redis.Nil {
+		sqlStatement := `select deck.deckid, deck.deckName, fc.term, fc.definition from Deck_instance as deck inner join Flashcard_instance as fc 
+		on deck.deckId = fc.deckId inner join User as user on fc.userID = user.userID
+		 where deck.deckId = ?;`
+
+		rows, err := db.Query(sqlStatement, id)
+		checkErr(err)
+
+		for rows.Next() {
+			var tempFlashCard FlashCard
+			err = rows.Scan(&redisInstanceDeck.DeckID, &redisInstanceDeck.DeckName, &tempFlashCard.Term, &tempFlashCard.Definition)
+			checkErr(err)
+			redisInstanceDeck.FlashCards = append(redisInstanceDeck.FlashCards, tempFlashCard)
+			redisInstanceDeck.NoFC++
+		}
+		temp, err := json.Marshal(redisInstanceDeck)
+		result = string(temp)
+	}
+
+	return result, nil
 }
