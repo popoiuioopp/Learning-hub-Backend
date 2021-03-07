@@ -16,3 +16,8 @@
 ```bash 
 go build main.go
 ```
+# Or
+
+```bash
+go build
+```
