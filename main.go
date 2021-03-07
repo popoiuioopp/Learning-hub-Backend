@@ -4,9 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 
-	"os"
-
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/popoiuioopp/Learning-hub-Backend/cache"
 )
 
 // SQLHandler refers to the connection to the database.
@@ -16,12 +15,13 @@ type SQLHandler struct {
 
 var sqliteHandler SQLHandler
 var forcreateuserid int
+var redisHandler cache.RedisClient
 
 // User struct created when there is a signal to create user.
 type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
-	UserID   int
+	UserID   int    `json:"id"`
 }
 
 //Check for the error
@@ -30,47 +30,44 @@ func checkErr(err error) {
 	if err != nil {
 		fmt.Println(err)
 		panic(err.Error())
-
 	}
 }
 
-//create flashard
-func Createfc() {
-
-	type FlashCard struct {
-		Term       string
-		Definition string
+func CheckDeckExist(db *sql.DB, name string) int {
+	var result int
+	statement := `SELECT COUNT(*) FROM learninghub.Deck_instance where learninghub.Deck_instance.deckName = ?;`
+	rows, err := db.Query(statement, name)
+	checkErr(err)
+	for rows.Next() {
+		err = rows.Scan(&result)
+		checkErr(err)
 	}
+	return result
+}
 
-	fmt.Println(">>>>>>>Create FlashCard")
-	fmt.Printf("Create Deck????/(Y/N): ")
-	var yesorno string
-	fmt.Scanln(&yesorno)
-	fmt.Println(yesorno)
-	if yesorno == "Y" {
-		fmt.Println("Deckname:")
-		var deckname string
-		fmt.Scanln(&deckname)
-		sqlStatement := `INSERT INTO Deck_instance(deckName) VALUES(?)`
-		_, err := sqliteHandler.Conn.Exec(sqlStatement, deckname)
+//create flashard
+func Createfc(db *sql.DB) {
+
+	var deckname string
+
+	fmt.Println("Deckname:")
+	fmt.Scanln(&deckname)
+
+	if CheckDeckExist(db, deckname) == 0 {
+		sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
+		_, err := db.Exec(sqlStatement, deckname)
 
 		checkErr(err)
 
 	} else {
-		fmt.Println("See you next time")
-		os.Exit(0)
-
+		fmt.Println("This Deck Name Already Used.")
 	}
 
-	fmt.Println("Flashcard name : ")
-	var namefc string
 	var checkid int
-	fmt.Scanln(&namefc)
-	sqlStatement := `SELECT deckId FROM Deck_instance ORDER	BY deckId DESC LIMIT 1` //check the lastest deckId and we will put it in the flashcard table
-	rows, err := sqliteHandler.Conn.Query(sqlStatement)
+	sqlStatement := `SELECT deckId FROM Deck_instance WHERE deckName = ? ORDER BY deckId DESC LIMIT 1 ` //check the lastest deckId and we will put it in the flashcard table
+	rows, err := db.Query(sqlStatement, deckname)
 	for rows.Next() {
 		err = rows.Scan(&checkid)
-		fmt.Println(checkid)
 		checkErr(err)
 	}
 	checkErr(err)
@@ -78,10 +75,9 @@ func Createfc() {
 	fmt.Println("Number of Flashcard : ") //let user choose
 	var numfc int
 	fmt.Scanln(&numfc)
-	var slice []FlashCard
-	fmt.Println(slice)
+	var slice []cache.FlashCard
 
-	var temp FlashCard
+	var temp cache.FlashCard
 	for i := 0; i < numfc; i++ {
 		fmt.Println("Term : ")
 		fmt.Scanln(&temp.Term)
@@ -89,23 +85,35 @@ func Createfc() {
 		fmt.Scanln(&temp.Definition)
 		slice = append(slice, temp)
 	}
-	fmt.Println(slice)
-	fmt.Println(len(slice))
 
+	var redisInstanceDeck cache.Deck
 	for _, element := range slice {
-		// fmt.Println(index, element.Term)
+
 		sqlStatement := `
 		INSERT INTO Flashcard_instance(deckId,term,definition,userID)
 		VALUES(?,?,?,?)
 		`
-		_, err := sqliteHandler.Conn.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuserid)
-		os.Exit(0)
+		_, err := db.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuserid)
+		redisInstanceDeck.FlashCards = append(redisInstanceDeck.FlashCards, element)
+		redisInstanceDeck.NoFC++
 		checkErr(err)
 	}
+
+	sqlStatement = `select deck.deckName, deck.deckId 
+	from Deck_instance as deck inner join Flashcard_instance as fc on
+	deck.deckId = fc.deckId where deck.deckId = ? limit 1;`
+
+	rows, err = db.Query(sqlStatement, checkid)
+	for rows.Next() {
+		err = rows.Scan(&redisInstanceDeck.DeckName, &redisInstanceDeck.DeckID)
+		checkErr(err)
+	}
+	cache.RedisAddDeck(redisHandler.Client, redisInstanceDeck)
+
 }
 
 // Create a User object and add to the database
-func createUser() {
+func createUser(db *sql.DB) {
 	fmt.Println("lets create your acc")
 	var usercreate string
 	var passcreate string
@@ -116,16 +124,13 @@ func createUser() {
 	fmt.Println("passwordcreate : ")
 	fmt.Scanln(&passcreate)
 
-	sqlStatement := "insert into User(username, password) values(?, ?);"    //
-	_, err := sqliteHandler.Conn.Exec(sqlStatement, usercreate, passcreate) // Execute the command
+	sqlStatement := "insert into User(username, password) values(?, ?);"
+	_, err := db.Exec(sqlStatement, usercreate, passcreate) // Execute the command
 	checkErr(err)
-	fmt.Println("Insert dai na")
 
 }
 
-func login() int {
-
-	fmt.Println("lets login")
+func login(db *sql.DB) int {
 
 	fmt.Println("usernamelog : ")
 	var username string
@@ -135,7 +140,7 @@ func login() int {
 	var password string
 	fmt.Scanln(&password)
 	sqlStatement := `SELECT username, password,userID FROM User WHERE username=? AND password=?`
-	rows, err := sqliteHandler.Conn.Query(sqlStatement, username, password)
+	rows, err := db.Query(sqlStatement, username, password)
 	checkErr(err)
 	var queryResult []User
 	for rows.Next() { //check rows
@@ -147,10 +152,9 @@ func login() int {
 
 	if len(queryResult) != 0 {
 
-		fmt.Println(queryResult)
 		for _, element := range queryResult { //if the username match the username in db then login success
 			if element.Username == username && element.Password == password {
-				fmt.Println("Successs loginnnnn")
+				fmt.Println("Successfully logged in")
 			}
 
 		}
@@ -160,18 +164,19 @@ func login() int {
 	return queryResult[0].UserID
 }
 
-// func checklogin() {
-// 	fmt.Println("Already have an acc??(Y/N)")
-// 	var haveaccornot string
-// 	fmt.Scan(&haveaccornot)
-// 	fmt.Println(haveaccornot)
-// 	if haveaccornot == "Y" {
-// 		login()
-// 	} else {
-// 		createUser()
-// 	}
-
-// }
+func ListDecks(db *sql.DB) {
+	fmt.Println("==========")
+	sqlStatement := "select deckid, deckName from Deck_instance;"
+	rows, err := db.Query(sqlStatement)
+	checkErr(err)
+	for rows.Next() {
+		var deckID string
+		var deckName string
+		err = rows.Scan(&deckID, &deckName)
+		fmt.Printf("%s : %s\n", deckID, deckName)
+	}
+	fmt.Println("==========")
+}
 
 func main() {
 
@@ -181,14 +186,50 @@ func main() {
 	fmt.Println("Connected to database")
 	sqliteHandler.Conn = db
 	defer db.Close()
-	// createUser("DEARZA", "12345")
-	// fmt.Println("Created successful")
-	// createUser()
-	// checklogin()
-	forcreateuserid = login()
 
-	Createfc()
+	redisHandler.Client = cache.NewClient()
 
-	var quit string
-	fmt.Scanln(&quit)
+	var choice int
+	fmt.Printf("Please choose option:\n" +
+		"1.)Login \n" +
+		"2.)Register \n")
+	fmt.Scanf("%d", &choice)
+	switch choice {
+	case 1:
+		forcreateuserid = login(sqliteHandler.Conn)
+	case 2:
+		createUser(sqliteHandler.Conn)
+		fmt.Println("Please Login")
+		forcreateuserid = login(sqliteHandler.Conn)
+	}
+
+Loop:
+	for {
+		fmt.Printf("Please choose option:\n" +
+			"1.)List all decks in the database \n" +
+			"2.)Create Deck \n" +
+			"3.)Check Deck Content \n" +
+			"4.)Log out\n")
+		fmt.Scanf("%d", &choice)
+
+		switch choice {
+		case 1:
+			ListDecks(sqliteHandler.Conn)
+		case 2:
+			Createfc(sqliteHandler.Conn)
+		case 3:
+			fmt.Printf("Please Enter DeckId or 0 to exit:\n")
+			fmt.Scanf("%d", &choice)
+			if choice == 0 {
+				continue
+			} else {
+				result, err := cache.ReadDeck(redisHandler.Client, sqliteHandler.Conn, choice)
+				checkErr(err)
+				fmt.Println(result)
+			}
+		default:
+			fmt.Println("Logged out")
+			break Loop
+		}
+	}
 }
