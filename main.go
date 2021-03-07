@@ -7,7 +7,6 @@ import (
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
-
 )
 
 // SQLHandler refers to the connection to the database.
@@ -153,10 +152,6 @@ func login() int {
 				fmt.Println("Noooooo")
 
 			}
-		}else if usercmd == "register"{
-			//regis
-		}else{
-			//join room
 		}
 
 	} else {
@@ -183,4 +178,3 @@ func main() {
 	var quit string
 	fmt.Scanln(&quit)
 }
-
