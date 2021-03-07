@@ -1,11 +1,11 @@
-package server
+package main
 
 import (
 	"fmt"
 	"net/http"
 )
 
-func Server() {
+func main() {
 	http.HandleFunc("/", HelloServer)
 	http.ListenAndServe(":8080", nil)
 }
