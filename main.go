@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 
-	"os"
-
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/popoiuioopp/Learning-hub-Backend/cache"
 )
@@ -42,7 +40,6 @@ func CheckDeckExist(db *sql.DB, name string) int {
 	checkErr(err)
 	for rows.Next() {
 		err = rows.Scan(&result)
-		fmt.Println(result)
 		checkErr(err)
 	}
 	return result
@@ -51,31 +48,19 @@ func CheckDeckExist(db *sql.DB, name string) int {
 //create flashard
 func Createfc(db *sql.DB) {
 
-	fmt.Println(">>>>>>>Create FlashCard")
-	fmt.Printf("Create Deck????/(Y/N): ")
-	var yesorno string
-	fmt.Scanln(&yesorno)
-	fmt.Println(yesorno)
 	var deckname string
-	if yesorno == "Y" {
-		fmt.Println("Deckname:")
-		fmt.Scanln(&deckname)
 
-		if CheckDeckExist(db, deckname) == 0 {
-			sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
-			_, err := db.Exec(sqlStatement, deckname)
+	fmt.Println("Deckname:")
+	fmt.Scanln(&deckname)
 
-			checkErr(err)
+	if CheckDeckExist(db, deckname) == 0 {
+		sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
+		_, err := db.Exec(sqlStatement, deckname)
 
-		} else {
-			fmt.Println("This Deck Name Already Used.")
-			os.Exit(0)
-		}
+		checkErr(err)
 
 	} else {
-		fmt.Println("See you next time")
-		os.Exit(0)
-
+		fmt.Println("This Deck Name Already Used.")
 	}
 
 	var checkid int
@@ -83,7 +68,6 @@ func Createfc(db *sql.DB) {
 	rows, err := db.Query(sqlStatement, deckname)
 	for rows.Next() {
 		err = rows.Scan(&checkid)
-		fmt.Println(checkid)
 		checkErr(err)
 	}
 	checkErr(err)
@@ -92,7 +76,6 @@ func Createfc(db *sql.DB) {
 	var numfc int
 	fmt.Scanln(&numfc)
 	var slice []cache.FlashCard
-	fmt.Println(slice)
 
 	var temp cache.FlashCard
 	for i := 0; i < numfc; i++ {
@@ -123,7 +106,6 @@ func Createfc(db *sql.DB) {
 	rows, err = db.Query(sqlStatement, checkid)
 	for rows.Next() {
 		err = rows.Scan(&redisInstanceDeck.DeckName, &redisInstanceDeck.DeckID)
-		fmt.Println(checkid)
 		checkErr(err)
 	}
 	cache.RedisAddDeck(redisHandler.Client, redisInstanceDeck)
@@ -142,15 +124,13 @@ func createUser(db *sql.DB) {
 	fmt.Println("passwordcreate : ")
 	fmt.Scanln(&passcreate)
 
-	sqlStatement := "insert into User(username, password) values(?, ?);" //
-	_, err := db.Exec(sqlStatement, usercreate, passcreate)              // Execute the command
+	sqlStatement := "insert into User(username, password) values(?, ?);"
+	_, err := db.Exec(sqlStatement, usercreate, passcreate) // Execute the command
 	checkErr(err)
 
 }
 
 func login(db *sql.DB) int {
-
-	fmt.Println("lets login")
 
 	fmt.Println("usernamelog : ")
 	var username string
@@ -172,7 +152,6 @@ func login(db *sql.DB) int {
 
 	if len(queryResult) != 0 {
 
-		fmt.Println(queryResult)
 		for _, element := range queryResult { //if the username match the username in db then login success
 			if element.Username == username && element.Password == password {
 				fmt.Println("Successfully logged in")
@@ -210,18 +189,20 @@ func main() {
 
 	redisHandler.Client = cache.NewClient()
 
-	forcreateuserid = login(sqliteHandler.Conn)
-
-	// Createfc(sqliteHandler.Conn)
-
-	// result, err := cache.ReadDeck(redisHandler.Client, sqliteHandler.Conn, 1)
-	// fmt.Println(result)
-
-	result, err := cache.ReadDeck(redisHandler.Client, sqliteHandler.Conn, 1)
-	checkErr(err)
-	fmt.Println(result)
-
 	var choice int
+	fmt.Printf("Please choose option:\n" +
+		"1.)Login \n" +
+		"2.)Register \n")
+	fmt.Scanf("%d", &choice)
+	switch choice {
+	case 1:
+		forcreateuserid = login(sqliteHandler.Conn)
+	case 2:
+		createUser(sqliteHandler.Conn)
+		fmt.Println("Please Login")
+		forcreateuserid = login(sqliteHandler.Conn)
+	}
+
 Loop:
 	for {
 		fmt.Printf("Please choose option:\n" +
@@ -242,7 +223,7 @@ Loop:
 			if choice == 0 {
 				continue
 			} else {
-				result, err := cache.ReadDeck(redisHandler.Client, sqliteHandler.Conn, 1)
+				result, err := cache.ReadDeck(redisHandler.Client, sqliteHandler.Conn, choice)
 				checkErr(err)
 				fmt.Println(result)
 			}
