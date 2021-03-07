@@ -3,9 +3,11 @@ package main
 import (
 	"database/sql"
 	"fmt"
+
 	"os"
 
 	_ "github.com/go-sql-driver/mysql"
+
 )
 
 // SQLHandler refers to the connection to the database.
@@ -14,6 +16,7 @@ type SQLHandler struct {
 }
 
 var sqliteHandler SQLHandler
+
 var forcreateuser int
 
 // User struct created when there is a signal to create user.
@@ -24,10 +27,12 @@ type User struct {
 }
 
 //Check for the error
+
 func checkErr(err error) {
 	if err != nil {
 		fmt.Println(err)
 		panic(err.Error())
+
 	}
 }
 
@@ -146,8 +151,14 @@ func login() int {
 				fmt.Println("Successs loginnnnn IMPORT BOOSSSSS")
 			} else {
 				fmt.Println("Noooooo")
+
 			}
+		}else if usercmd == "register"{
+			//regis
+		}else{
+			//join room
 		}
+
 	} else {
 		fmt.Println("Cannot log in")
 	}
@@ -172,3 +183,4 @@ func main() {
 	var quit string
 	fmt.Scanln(&quit)
 }
+
