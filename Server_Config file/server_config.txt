@@ -1,0 +1,18 @@
+// add this line to /etc/security/limits.conf
+// change number of process and no. of open file to maximum possible
+// last factor is hardware
+
+* soft     nproc          65535    
+* hard     nproc          65535   
+* soft     nofile         65535   
+* hard     nofile         65535
+root soft     nproc          65535    
+root hard     nproc          65535   
+root soft     nofile         65535   
+root hard     nofile         65535
+
+// above code doesn't affect everytime.
+// add this line to /etc/pam.d/common-session
+// when session is open enforce the above rule
+
+session required pam_limits.so
