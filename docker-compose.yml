@@ -15,6 +15,7 @@ services:
       - "5000:5000" # Forward the exposed port 8080 on the container to port 8080 on the host machine
     restart: unless-stopped
     depends_on:
+      - mysql # This service depends on mysql. Start that first.
       - redis # This service depends on redis. Start that first.
     environment: # Pass environment variables to the service
       REDIS_URL: redis:6379

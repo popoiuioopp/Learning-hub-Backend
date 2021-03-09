@@ -10,7 +10,7 @@ func main() {
 	//listen
 	//accept
 	//handle connection -> thread
-	dstream, err := net.Listen("tcp", ":8080")
+	dstream, err := net.Listen("tcp", ":5000")
 
 	if err != nil {
 		fmt.Println(err)
