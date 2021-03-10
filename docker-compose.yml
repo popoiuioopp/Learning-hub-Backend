@@ -29,7 +29,7 @@ services:
     container_name: mysql
     volumes:
       - container-volume:/var/lib/mysql
-      - ./mysqldump.sql:/docker-entrypoint-initdb.d/mysqldump.sql
+      - ./mysql/mysqldump.sql:/docker-entrypoint-initdb.d/mysqldump.sql
     environment:
       MYSQL_ROOT_PASSWORD: FgTQTzNM62cC63K
       MYSQL_DATABASE: learninghub
