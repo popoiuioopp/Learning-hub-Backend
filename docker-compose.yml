@@ -11,6 +11,7 @@ services:
     build:
       context: ./app-service # Use an image built from the specified dockerfile in the current directory.
       dockerfile: Dockerfile
+    container_name: app-service
     ports:
       - "5000:5000" # Forward the exposed port 8080 on the container to port 8080 on the host machine
     restart: unless-stopped
@@ -25,10 +26,10 @@ services:
   # MySQL Service
   mysql:
     image: mysql
-    container_name: mysqldb
+    container_name: mysql
     volumes:
       - container-volume:/var/lib/mysql
-      - ./mysql/mysqldump.sql:/docker-entrypoint-initdb.d/mysqldump.sql
+      - ./mysqldump.sql:/docker-entrypoint-initdb.d/mysqldump.sql
     environment:
       MYSQL_ROOT_PASSWORD: FgTQTzNM62cC63K
       MYSQL_DATABASE: learninghub
@@ -38,6 +39,7 @@ services:
   # Redis Service
   redis:
     image: "redis:alpine" # Use a public Redis image to build the redis service
+    container_name: redis
     restart: unless-stopped
     networks:
       - backend
