@@ -9,7 +9,7 @@ services:
   app:
     # Configuration for building the docker image for the service
     build:
-      context: . # Use an image built from the specified dockerfile in the current directory.
+      context: ./app-service # Use an image built from the specified dockerfile in the current directory.
       dockerfile: Dockerfile
     ports:
       - "5000:5000" # Forward the exposed port 8080 on the container to port 8080 on the host machine
@@ -28,7 +28,7 @@ services:
     container_name: mysqldb
     volumes:
       - container-volume:/var/lib/mysql
-      - ./mysqldump.sql:/docker-entrypoint-initdb.d/mysqldump.sql
+      - ./mysql/mysqldump.sql:/docker-entrypoint-initdb.d/mysqldump.sql
     environment:
       MYSQL_ROOT_PASSWORD: FgTQTzNM62cC63K
       MYSQL_DATABASE: learninghub
