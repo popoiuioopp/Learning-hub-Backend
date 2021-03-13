@@ -9,17 +9,30 @@ services:
   app:
     # Configuration for building the docker image for the service
     build:
-      context: ./app-service # Use an image built from the specified dockerfile in the current directory.
+      context: ./load-balancer # Use an image built from the specified dockerfile in the current directory.
       dockerfile: Dockerfile
     container_name: app-service
     ports:
-      - "5000:5000" # Forward the exposed port 8080 on the container to port 8080 on the host machine
+      - "5000:5000" # Forward the exposed port 5000 on the container to port 5000 on the host machine
     restart: unless-stopped
     depends_on:
       - mysql # This service depends on mysql. Start that first.
       - redis # This service depends on redis. Start that first.
     environment: # Pass environment variables to the service
       REDIS_URL: redis:6379
+    networks: # Networks to join (Services on the same network can communicate with each other using their name)
+      - backend
+
+  gameserver:
+    build:
+      context: ./game-server
+      dockerfile: Dockerfile
+    container_name: game-server
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+    depends_on:
+      - app
     networks: # Networks to join (Services on the same network can communicate with each other using their name)
       - backend
 
