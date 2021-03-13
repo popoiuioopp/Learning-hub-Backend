@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+	// db, err := sql.Open("mysql", "learninghub:FgTQTzNM62cC63K@tcp(139.59.106.148:3306)/learninghub")
 	s := newServer()
 	go s.run()
 
