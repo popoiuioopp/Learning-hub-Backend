@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/popoiuioopp/Learning-hub-Backend/cache"
@@ -163,6 +164,34 @@ func login(db *sql.DB) int {
 	}
 	return queryResult[0].UserID
 }
+func whogotfirst() {
+	start := time.Now()
+	// Code to measure
+	fmt.Println("choose number 1 2 3 ")
+	var yourchoice int
+	if yourchoice == 1 {
+		fmt.Println("this is your time")
+
+	}
+
+	duration := time.Since(start)
+
+	// Formatted string, such as "2h3m0.5s" or "4.503μs"
+	fmt.Println(duration.Seconds())
+
+}
+
+func timesup() {
+	fmt.Println("testing countdown")
+	i := 10
+	for i > 0 {
+		fmt.Printf("%2d\r", i)
+		time.Sleep((time.Second))
+		i = i - 1
+	}
+	fmt.Println("test sucess")
+
+}
 
 func ListDecks(db *sql.DB) {
 	fmt.Println("==========")
@@ -192,7 +221,10 @@ func main() {
 	var choice int
 	fmt.Printf("Please choose option:\n" +
 		"1.)Login \n" +
-		"2.)Register \n")
+		"2.)Register \n" +
+		"3.)testtime \n" +
+		"4.)tetswhogotfirst \n")
+
 	fmt.Scanf("%d", &choice)
 	switch choice {
 	case 1:
@@ -201,35 +233,39 @@ func main() {
 		createUser(sqliteHandler.Conn)
 		fmt.Println("Please Login")
 		forcreateuserid = login(sqliteHandler.Conn)
+	case 3:
+		timesup()
+	case 4:
+		whogotfirst()
 	}
 
-Loop:
-	for {
-		fmt.Printf("Please choose option:\n" +
-			"1.)List all decks in the database \n" +
-			"2.)Create Deck \n" +
-			"3.)Check Deck Content \n" +
-			"4.)Log out\n")
-		fmt.Scanf("%d", &choice)
+	// Loop:
+	// 	for {
+	// 		fmt.Printf("Please choose option:\n" +
+	// 			"1.)List all decks in the database \n" +
+	// 			"2.)Create Deck \n" +
+	// 			"3.)Check Deck Content \n" +
+	// 			"4.)Log out\n")
+	// 		fmt.Scanf("%d", &choice)
 
-		switch choice {
-		case 1:
-			ListDecks(sqliteHandler.Conn)
-		case 2:
-			Createfc(sqliteHandler.Conn)
-		case 3:
-			fmt.Printf("Please Enter DeckId or 0 to exit:\n")
-			fmt.Scanf("%d", &choice)
-			if choice == 0 {
-				continue
-			} else {
-				result, err := cache.ReadDeck(redisHandler.Client, sqliteHandler.Conn, choice)
-				checkErr(err)
-				fmt.Println(result)
-			}
-		default:
-			fmt.Println("Logged out")
-			break Loop
-		}
-	}
+	// 		switch choice {
+	// 		case 1:
+	// 			ListDecks(sqliteHandler.Conn)
+	// 		case 2:
+	// 			Createfc(sqliteHandler.Conn)
+	// 		case 3:
+	// 			fmt.Printf("Please Enter DeckId or 0 to exit:\n")
+	// 			fmt.Scanf("%d", &choice)
+	// 			if choice == 0 {
+	// 				continue
+	// 			} else {
+	// 				result, err := cache.ReadDeck(redisHandler.Client, sqliteHandler.Conn, choice)
+	// 				checkErr(err)
+	// 				fmt.Println(result)
+	// 			}
+	// 		default:
+	// 			fmt.Println("Logged out")
+	// 			break Loop
+	// 		}
+	// 	}
 }
