@@ -5,8 +5,10 @@ import (
 )
 
 type room struct {
-	name    string
-	members map[net.Addr]*client
+	name      string
+	members   map[net.Addr]*client
+	flashcard string
+	host      string
 }
 
 func (r *room) broadcast(sender *client, msg string) {

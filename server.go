@@ -32,6 +32,16 @@ func (s *server) run() {
 			s.msg(cmd.client, cmd.args)
 		case CMD_QUIT:
 			s.quit(cmd.client)
+		case CMD_CROOM:
+			s.croom(cmd.client, cmd.args[1])
+		case CMD_START:
+			s.startGame(cmd.client)
+		case CMD_CREATEFC:
+			s.createfc(cmd.client, cmd.args[1], cmd.args[2])
+		case CMD_LOGIN:
+			s.login(cmd.client, cmd.args[1], cmd.args[2])
+		case CMD_REGIS:
+			s.regis(cmd.client, cmd.args[1], cmd.args[2], cmd.args[3])
 		}
 	}
 }
@@ -53,14 +63,44 @@ func (s *server) nick(c *client, nick string) {
 	c.msg(fmt.Sprintf("all right, I will call you %s", nick))
 }
 
+func (s *server) croom(c *client, roomName string) {
+
+	c.msg(fmt.Sprintf("croom %s", roomName))
+	r, ok := s.rooms[roomName]
+
+	if !ok {
+
+		c.msg(fmt.Sprintf("Select Your Flashcard..."))
+		// Put Select Flashcard Function From Boss Here
+
+		r = &room{
+			name:      roomName,
+			members:   make(map[net.Addr]*client),
+			flashcard: "Flashcard", // Selected Flashcard
+			host:      "host_id",   // Host ID
+		}
+		s.rooms[roomName] = r
+	} else {
+		fmt.Println("Room already existed!...")
+		return
+	}
+
+	r.members[c.conn.RemoteAddr()] = c
+
+	s.quitCurrentRoom(c)
+	c.room = r
+
+	// r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
+
+	c.msg(fmt.Sprintf("welcome to %s", roomName))
+}
+
 func (s *server) join(c *client, roomName string) {
 	r, ok := s.rooms[roomName]
 	if !ok {
-		r = &room{
-			name:    roomName,
-			members: make(map[net.Addr]*client),
-		}
-		s.rooms[roomName] = r
+
+		c.msg(fmt.Sprintf("Room is not available!"))
+		return
 	}
 	r.members[c.conn.RemoteAddr()] = c
 
@@ -70,6 +110,22 @@ func (s *server) join(c *client, roomName string) {
 	r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
 
 	c.msg(fmt.Sprintf("welcome to %s", roomName))
+}
+
+func (s *server) startGame(c *client) {
+	//start game
+}
+
+func (s *server) createfc(c *client, namefc string, total string) {
+	//create fc
+}
+
+func (s *server) login(c *client, username string, pass string) {
+	//login
+}
+
+func (s *server) regis(c *client, username string, pass string, verifypass string) {
+	//regis
 }
 
 func (s *server) listRooms(c *client) {
