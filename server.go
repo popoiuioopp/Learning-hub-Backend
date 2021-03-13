@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"net"
@@ -10,6 +11,22 @@ import (
 type server struct {
 	rooms    map[string]*room
 	commands chan command
+}
+
+func readMsg(c *client) {
+	c.msg(fmt.Sprintf("hello in readMsg"))
+
+	for {
+		c.msg(fmt.Sprintf("loop"))
+		msg, err := bufio.NewReader(c.conn).ReadString('\n')
+		c.msg(fmt.Sprintf("loop1"))
+		if err != nil {
+			return
+		}
+		c.msg(fmt.Sprintf(msg))
+		c.msg(fmt.Sprintf("loop2"))
+	}
+
 }
 
 func newServer() *server {
@@ -52,7 +69,8 @@ func (s *server) newClient(conn net.Conn) {
 	c := &client{
 		conn:     conn,
 		nick:     "anonymous",
-		commands: s.commands,
+		status:   "0",
+		commands: s.commands, 
 	}
 
 	c.readInput()
@@ -118,6 +136,60 @@ func (s *server) startGame(c *client) {
 
 func (s *server) createfc(c *client, namefc string, total string) {
 	//create fc
+	//var deckname string
+
+	
+	//c.status = "create cfc"
+	//readMsg(c)
+	/*
+		if CheckDeckExist(db, deckname) == 0 {
+			sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
+			_, err := db.Exec(sqlStatement, deckname)
+			checkErr(err)
+		} else {
+			fmt.Println("This Deck Name Already Used.")
+		}
+		var checkid int
+		sqlStatement := `SELECT deckId FROM Deck_instance WHERE deckName = ? ORDER BY deckId DESC LIMIT 1 ` //check the lastest deckId and we will put it in the flashcard table
+		rows, err := db.Query(sqlStatement, deckname)
+		for rows.Next() {
+			err = rows.Scan(&checkid)
+			checkErr(err)
+		}
+		checkErr(err)
+		fmt.Println("Number of Flashcard : ") //let user choose
+		var numfc int
+		fmt.Scanln(&numfc)
+		var slice []cache.FlashCard
+		var temp cache.FlashCard
+		for i := 0; i < numfc; i++ {
+			fmt.Println("Term : ")
+			fmt.Scanln(&temp.Term)
+			fmt.Println("Definition : ")
+			fmt.Scanln(&temp.Definition)
+			slice = append(slice, temp)
+		}
+		var redisInstanceDeck cache.Deck
+		for _, element := range slice {
+			sqlStatement := `
+			INSERT INTO Flashcard_instance(deckId,term,definition,userID)
+			VALUES(?,?,?,?)
+			`
+			_, err := db.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuserid)
+			redisInstanceDeck.FlashCards = append(redisInstanceDeck.FlashCards, element)
+			redisInstanceDeck.NoFC++
+			checkErr(err)
+		}
+		sqlStatement = `select deck.deckName, deck.deckId
+		from Deck_instance as deck inner join Flashcard_instance as fc on
+		deck.deckId = fc.deckId where deck.deckId = ? limit 1;`
+		rows, err = db.Query(sqlStatement, checkid)
+		for rows.Next() {
+			err = rows.Scan(&redisInstanceDeck.DeckName, &redisInstanceDeck.DeckID)
+			checkErr(err)
+		}
+		cache.RedisAddDeck(redisHandler.Client, redisInstanceDeck)
+	*/
 }
 
 func (s *server) login(c *client, username string, pass string) {
