@@ -168,11 +168,6 @@ func whogotfirst() {
 	start := time.Now()
 	// Code to measure
 	fmt.Println("choose number 1 2 3 ")
-	var yourchoice int
-	if yourchoice == 1 {
-		fmt.Println("this is your time")
-
-	}
 
 	duration := time.Since(start)
 
