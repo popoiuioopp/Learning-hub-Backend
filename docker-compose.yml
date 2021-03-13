@@ -5,8 +5,8 @@ version: '3'
 # Define services
 services:
 
-  # App Service
-  app:
+  # load balancer
+  load-balancer:
     # Configuration for building the docker image for the service
     build:
       context: ./load-balancer # Use an image built from the specified dockerfile in the current directory.
