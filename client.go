@@ -17,7 +17,6 @@ type client struct {
 
 func (c *client) readInput() {
 	for {
-		c.msg(fmt.Sprintf("Status Client1: %s\n", c.status))
 		if (c.status == "0") {
 			msg, err := bufio.NewReader(c.conn).ReadString('\n')
 			if err != nil {
@@ -71,9 +70,13 @@ func (c *client) readInput() {
 					client: c,
 					args:   args,
 				}
-			case "/cfc":
+			case "/cflashcard":
 				c.status = "1"
-			
+			case "/rfc":
+				c.status = "2"
+			case "/rstatus":
+				c.msg(fmt.Sprintf("room status: %t\n",c.room))
+
 			default:
 				c.err(fmt.Errorf("unknown command: %s", cmd))
 			}
@@ -83,11 +86,12 @@ func (c *client) readInput() {
 			if err != nil {
 				return
 			}
-			c.msg(fmt.Sprintf("Deckname: %s\n",deckname))
+			c.msg(fmt.Sprintf("Deckname: %s",deckname))
 
 			//for loop
 			
 			for (c.status == "1"){
+				c.msg(fmt.Sprintf("Give Your Word (format: Term || Definition) or Exit (cmd: /done): "))
 				msg, err := bufio.NewReader(c.conn).ReadString('\n')
 				if err != nil {
 					c.msg(fmt.Sprintf(msg))
@@ -99,7 +103,7 @@ func (c *client) readInput() {
 				if (len(text)==1){
 					cmd := strings.TrimSpace(text[0])
 					switch cmd {
-						case "/exit":
+						case "/done":
 							c.status = "0"	
 							msg123 := "/cfc text 123"
 							args := strings.Split(msg123, " ")
@@ -109,6 +113,7 @@ func (c *client) readInput() {
 								client: c,
 								args:	args,
 							} 
+							c.msg(fmt.Sprintf("Done creating flashcard"))
 							break
 						default:
 							c.msg(fmt.Sprintf("Invalid inputs"))
@@ -117,14 +122,24 @@ func (c *client) readInput() {
 					term := strings.TrimSpace(text[0])
 					def := strings.TrimSpace(text[1])
 					c.msg(fmt.Sprintf(term))
-					c.msg(fmt.Sprintf(def))
-					c.msg(fmt.Sprintf("Term & def"))
+					c.msg(fmt.Sprintf("%s\n",def))
 				} else {
 					c.msg(fmt.Sprintf("Invalid inputs"))
 					continue
 					}		
 				}
-			}	
+			}else if (c.status == "2"){
+				c.msg(fmt.Sprintf("Pls Choose FC"))
+				// show fc here
+				deckid, err := bufio.NewReader(c.conn).ReadString('\n')
+				if err != nil {
+					c.msg(fmt.Sprintf(deckid))
+					return 
+				}
+				c.msg(fmt.Sprintf("Deckid: %s\n",deckid))
+				//query fc from db
+				c.status = "0"
+			}
 		}
 	}
 

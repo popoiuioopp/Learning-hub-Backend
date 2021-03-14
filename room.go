@@ -9,6 +9,7 @@ type room struct {
 	members   map[net.Addr]*client
 	flashcard string
 	host      string
+	status    bool
 }
 
 func (r *room) broadcast(sender *client, msg string) {
