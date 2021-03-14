@@ -6,6 +6,7 @@ import (
 )
 
 func main() {
+	newDBConn()
 	s := newServer()
 	go s.run()
 
