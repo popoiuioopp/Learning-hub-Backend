@@ -7,6 +7,8 @@ import (
 
 func main() {
 	s := newServer()
+	newDBConn()
+	defer sqliteHandler.Conn.Close()
 	go s.run()
 
 	listener, err := net.Listen("tcp", ":8888")

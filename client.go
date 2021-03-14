@@ -64,19 +64,16 @@ func (c *client) readInput() {
 					client: c,
 					args:   args,
 				}
-			case "/start":
-				c.commands <- command{
-					id:     CMD_START,
-					client: c,
-					args:   args,
-				}
-			case "/cflashcard":
+			case "/cfc":
 				c.status = "1"
 			case "/rfc":
 				c.status = "2"
 			case "/rstatus":
 				c.msg(fmt.Sprintf("room status: %t\n",c.room))
-
+			case "/ready":
+				c.status = "3"
+			case "/cuser":
+				c.msg(fmt.Sprintf("current user: "))
 			default:
 				c.err(fmt.Errorf("unknown command: %s", cmd))
 			}
@@ -84,13 +81,24 @@ func (c *client) readInput() {
 			c.msg(fmt.Sprintf("Name Your Deck: "))
 			deckname, err := bufio.NewReader(c.conn).ReadString('\n')
 			if err != nil {
+				fmt.Println(err)
 				return
 			}
-			c.msg(fmt.Sprintf("Deckname: %s",deckname))
-
+			if !createDeck(c,deckname){
+				c.status = "0"
+				c.msg(fmt.Sprintf("you are in the lobby now "))
+			}
+			deckid, err := checkDeckId(deckname)
+			if err != nil {
+				fmt.Println(err)
+				return 
+			}
+			c.msg(fmt.Sprintf("You deck ID is %d", deckid))
+			
 			//for loop
 			
 			for (c.status == "1"){
+				c.msg(fmt.Sprintf("write your words then space bar and || with definiton "))
 				c.msg(fmt.Sprintf("Give Your Word (format: Term || Definition) or Exit (cmd: /done): "))
 				msg, err := bufio.NewReader(c.conn).ReadString('\n')
 				if err != nil {
@@ -105,32 +113,37 @@ func (c *client) readInput() {
 					switch cmd {
 						case "/done":
 							c.status = "0"	
-							msg123 := "/cfc text 123"
-							args := strings.Split(msg123, " ")
+							c.msg(fmt.Sprintf("You are in lobby now"))
 
-							c.commands <- command{
-								id: CMD_CREATEFC,
-								client: c,
-								args:	args,
-							} 
+							// REMOVE IT LATER ON
+							// msg123 := "/cfc text 123"
+							// args := strings.Split(msg123, " ")
+
+							// c.commands <- command{
+							// 	id: CMD_CREATEFC,
+							// 	client: c,
+							// 	args:	args,
+							// } 
 							c.msg(fmt.Sprintf("Done creating flashcard"))
 							break
 						default:
 							c.msg(fmt.Sprintf("Invalid inputs"))
+							continue
 					}
 				} else if (len(text) == 2) {
 					term := strings.TrimSpace(text[0])
 					def := strings.TrimSpace(text[1])
 					c.msg(fmt.Sprintf(term))
 					c.msg(fmt.Sprintf("%s\n",def))
+					// boss
 				} else {
 					c.msg(fmt.Sprintf("Invalid inputs"))
 					continue
 					}		
 				}
 			}else if (c.status == "2"){
-				c.msg(fmt.Sprintf("Pls Choose FC"))
-				// show fc here
+				c.msg(fmt.Sprintf("Pls Choose your deck"))
+				ListDecks(c)
 				deckid, err := bufio.NewReader(c.conn).ReadString('\n')
 				if err != nil {
 					c.msg(fmt.Sprintf(deckid))
@@ -139,10 +152,53 @@ func (c *client) readInput() {
 				c.msg(fmt.Sprintf("Deckid: %s\n",deckid))
 				//query fc from db
 				c.status = "0"
-			}
+			}else if (c.status == "3"){
+				
+				gamestatus := c.room.changeroomstatus(c)
+
+				if (gamestatus == 1) {
+					// START GAME
+					// REMOVE IT LATER ON
+					// msg123 := "/cfc text 123"
+					// args := strings.Split(msg123, " ")
+
+					// c.commands <- command{
+					// 	id:     CMD_START,
+					// 	client: c,
+					// 	args:   args,
+					//}
+				} 
+				
+				idle := 1
+				for (idle == 1) {
+					c.msg(fmt.Sprintf("Now idle =%d", idle ))
+					cmd, err := bufio.NewReader(c.conn).ReadString('\n')
+
+					if err != nil {
+						c.msg(fmt.Sprintf(cmd))
+						return 
+					}
+					if (c.room.status == true) {
+						for i := 0; i <= 10; i++ {
+							cmd, err := bufio.NewReader(c.conn).ReadString('\n')
+							c.msg(fmt.Sprintf(cmd))
+							if err != nil {
+								c.msg(fmt.Sprintf(cmd))
+								return
+							}
+						}
+						idle = 0;
+						continue
+
+					} else {
+						c.msg(fmt.Sprintf("The Game Haven't Start Yet!"))
+					}
+				}
+				c.status = "0"
 		}
 	}
-
+	
+}
 
 func (c *client) err(err error) {
 	c.conn.Write([]byte("err: " + err.Error() + "\n"))

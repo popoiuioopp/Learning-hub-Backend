@@ -13,6 +13,7 @@ const (
 	CMD_CREATEFC
 	CMD_START
 	CMD_CROOM
+	CMD_CUSER
 )
 
 type command struct {
