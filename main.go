@@ -24,7 +24,6 @@ func main() {
 			log.Printf("failed to accept connection: %s", err.Error())
 			continue
 		}
-
 		go s.newClient(conn)
 	}
 }

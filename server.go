@@ -1,29 +1,22 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"log"
 	"net"
 	"strings"
 )
 
+// global var
+var totaluser int
+var totalUserRoom int
+
 type server struct {
 	rooms    map[string]*room
 	commands chan command
-}
-
-func readMsg(c *client) string {
-	msg, err := bufio.NewReader(c.conn).ReadString('\n')
-	if err != nil {
-		return ""
-	}
-
-	msg = strings.Trim(msg, "\r\n")
-
-	args := strings.Split(msg, " ")
-	cmd := strings.TrimSpace(args[0])
-	return cmd
+	// listener net.Listener
+	// wg       sync.WaitGroup
+	// quitt    chan interface{}
 }
 
 func newServer() *server {
@@ -56,25 +49,34 @@ func (s *server) run() {
 			s.login(cmd.client, cmd.args[1], cmd.args[2])
 		case CMD_REGIS:
 			s.regis(cmd.client, cmd.args[1], cmd.args[2], cmd.args[3])
+		case CMD_TOTAL:
+			s.total(cmd.client)
 		}
 	}
 }
 
 func (s *server) newClient(conn net.Conn) {
-	log.Printf("new client has joined: %s", conn.RemoteAddr().String())
 
+	// close(s.quitt)
+	// s.listener.Close()
+	// s.wg.Wait()
+	log.Printf("new client has joined: %s", conn.RemoteAddr().String())
+	totaluser += 1
 	c := &client{
 		conn:     conn,
 		nick:     "anonymous",
 		commands: s.commands,
 	}
-
+	c.msg(fmt.Sprintf("Welcome to Learning Hub!!!!!!!!"))
 	c.readInput()
+	// conn.Close()
 }
 
 func (s *server) nick(c *client, nick string) {
 	c.nick = nick
 	c.msg(fmt.Sprintf("all right, I will call you %s", nick))
+	c.msg(fmt.Sprintf("Total user : %d", totaluser))
+	c.msg(fmt.Sprintf("Total in room : %d", totalUserRoom))
 }
 
 func (s *server) croom(c *client, roomName string) {
@@ -104,8 +106,8 @@ func (s *server) croom(c *client, roomName string) {
 	s.quitCurrentRoom(c)
 	c.room = r
 
-	// r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
-
+	r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
+	r.broadcast(c, fmt.Sprintf("Total player in current room : %d", len(r.members)))
 	c.msg(fmt.Sprintf("welcome to %s", roomName))
 }
 
@@ -122,7 +124,7 @@ func (s *server) join(c *client, roomName string) {
 	c.room = r
 
 	r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
-
+	totalUserRoom += 1
 	c.msg(fmt.Sprintf("welcome to %s", roomName))
 }
 
@@ -132,70 +134,6 @@ func (s *server) startGame(c *client) {
 
 func (s *server) createfc(c *client, namefc string, total string) {
 	//create fc
-	//var deckname string
-
-	c.msg(fmt.Sprintf("wat Deck name"))
-	test := readMsg(c)
-	fmt.Print(test)
-
-	/*
-		if CheckDeckExist(db, deckname) == 0 {
-			sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
-			_, err := db.Exec(sqlStatement, deckname)
-
-			checkErr(err)
-
-		} else {
-			fmt.Println("This Deck Name Already Used.")
-		}
-
-		var checkid int
-		sqlStatement := `SELECT deckId FROM Deck_instance WHERE deckName = ? ORDER BY deckId DESC LIMIT 1 ` //check the lastest deckId and we will put it in the flashcard table
-		rows, err := db.Query(sqlStatement, deckname)
-		for rows.Next() {
-			err = rows.Scan(&checkid)
-			checkErr(err)
-		}
-		checkErr(err)
-
-		fmt.Println("Number of Flashcard : ") //let user choose
-		var numfc int
-		fmt.Scanln(&numfc)
-		var slice []cache.FlashCard
-
-		var temp cache.FlashCard
-		for i := 0; i < numfc; i++ {
-			fmt.Println("Term : ")
-			fmt.Scanln(&temp.Term)
-			fmt.Println("Definition : ")
-			fmt.Scanln(&temp.Definition)
-			slice = append(slice, temp)
-		}
-
-		var redisInstanceDeck cache.Deck
-		for _, element := range slice {
-
-			sqlStatement := `
-			INSERT INTO Flashcard_instance(deckId,term,definition,userID)
-			VALUES(?,?,?,?)
-			`
-			_, err := db.Exec(sqlStatement, checkid, element.Term, element.Definition, forcreateuserid)
-			redisInstanceDeck.FlashCards = append(redisInstanceDeck.FlashCards, element)
-			redisInstanceDeck.NoFC++
-			checkErr(err)
-		}
-
-		sqlStatement = `select deck.deckName, deck.deckId
-		from Deck_instance as deck inner join Flashcard_instance as fc on
-		deck.deckId = fc.deckId where deck.deckId = ? limit 1;`
-
-		rows, err = db.Query(sqlStatement, checkid)
-		for rows.Next() {
-			err = rows.Scan(&redisInstanceDeck.DeckName, &redisInstanceDeck.DeckID)
-			checkErr(err)
-		}
-		cache.RedisAddDeck(redisHandler.Client, redisInstanceDeck)
-	*/
 }
 
 func (s *server) login(c *client, username string, pass string) {
@@ -211,8 +149,8 @@ func (s *server) listRooms(c *client) {
 	for name := range s.rooms {
 		rooms = append(rooms, name)
 	}
-
-	c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ", ")))
+	c.msg(fmt.Sprintf("total rooms: %d", len(rooms)))
+	// c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ", ")))
 }
 
 func (s *server) msg(c *client, args []string) {
@@ -227,6 +165,7 @@ func (s *server) quit(c *client) {
 
 	c.msg("sad to see you go =(")
 	c.conn.Close()
+	// totaluser -= 1
 }
 
 func (s *server) quitCurrentRoom(c *client) {
@@ -235,4 +174,8 @@ func (s *server) quitCurrentRoom(c *client) {
 		delete(s.rooms[c.room.name].members, c.conn.RemoteAddr())
 		oldRoom.broadcast(c, fmt.Sprintf("%s has left the room", c.nick))
 	}
+}
+
+func (s *server) total(c *client) {
+	c.msg(fmt.Sprintf("Total user : %d", totaluser))
 }
