@@ -1,16 +1,16 @@
 package main
 
 import (
-	"net"
 	"fmt"
+	"net"
 )
 
 type room struct {
-	name      string
-	members   map[net.Addr]*client
-	flashcard string
-	host      string
-	status    bool
+	name    string
+	members map[net.Addr]*client
+	deckid  int
+	host    string
+	status  bool
 }
 
 func (r *room) broadcast(sender *client, msg string) {
@@ -24,8 +24,8 @@ func (r *room) broadcast(sender *client, msg string) {
 }
 
 func (r *room) changeroomstatus(sender *client) int {
-	for _ , m := range r.members {
-		if (m.status != "3")  {
+	for _, m := range r.members {
+		if m.status != "3" {
 			// sender.msg(fmt.Sprintf("Client [%s] -> %s", addr, m.status))
 			sender.msg(fmt.Sprintf("Cannot Start!"))
 			return 0

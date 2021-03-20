@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
+	"time"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -13,30 +15,17 @@ import (
 type server struct {
 	rooms    map[string]*room
 	commands chan command
-	num_user int 
+	num_user int
 }
 
 type SQLHandler struct {
 	Conn *sql.DB
 }
 
-type Deck struct {
-	ID           int
-	Name         string
-	Capacity     int
-	FlashCardsID []int
-}
-
 type Flashcard struct {
-	ID         int
 	term       string
 	definition string
 	deckID     int
-}
-
-type CreatingDeck struct {
-	DeckStruct Deck
-	Flashcards []Flashcard
 }
 
 var sqliteHandler SQLHandler
@@ -64,16 +53,18 @@ func (s *server) run() {
 			s.quit(cmd.client)
 		case CMD_CROOM:
 			s.croom(cmd.client, cmd.args[1])
-		// case CMD_START:
-		// 	s.startGame(cmd.client)
-		case CMD_CREATEFC:
-			s.createfc(cmd.client, cmd.args[1], cmd.args[2])
+		case CMD_START:
+			s.startGame(cmd.client)
+		// case CMD_CREATEFC:
+		// 	s.createfc(cmd.client, cmd.args[1], cmd.args[2])
 		case CMD_LOGIN:
 			s.login(cmd.client, cmd.args[1], cmd.args[2])
 		case CMD_REGIS:
 			s.regis(cmd.client, cmd.args[1], cmd.args[2], cmd.args[3])
 		case CMD_CUSER:
 			s.cuser(cmd.client)
+		case CMD_SRD:
+			s.setroomdeck(cmd.client, cmd.args[1])
 		}
 	}
 }
@@ -86,9 +77,9 @@ func (s *server) newClient(conn net.Conn) {
 		conn:     conn,
 		nick:     "anonymous",
 		status:   "0",
-		commands: s.commands, 
+		commands: s.commands,
 	}
-	
+
 	c.readInput()
 }
 
@@ -120,15 +111,14 @@ func (s *server) croom(c *client, roomName string) {
 		// Put Select Flashcard Function From Boss Here
 
 		r = &room{
-			name:      roomName,
-			members:   make(map[net.Addr]*client),
-			flashcard: "Flashcard", // Selected Flashcard
-			host:      "host_id",   // Host ID
-			status:    false,
+			name:    roomName,
+			members: make(map[net.Addr]*client),
+			host:    "host_id", // Host ID
+			status:  false,
 		}
 
 		s.rooms[roomName] = r
-		
+
 	} else {
 		fmt.Println("Room already existed!...")
 		return
@@ -161,16 +151,16 @@ func (s *server) join(c *client, roomName string) {
 
 	c.msg(fmt.Sprintf("welcome to %s", roomName))
 	c.msg(fmt.Sprintf("if you want to play the game type ready"))
-	
+
 }
 
-// func (s *server) startGame(c *client) int {
-// 	// BROADCAST QUESTION 
-// 	return
-// }
+func (s *server) startGame(c *client) int {
+	// BROADCAST QUESTION
+	return 0
+}
+
 //////list all deck//////////////////////
 func ListDecks(c *client) {
-	fmt.Print("Hello ListDeck")
 	sqlStatement := "select deckid, deckName from Deck_instance;"
 	rows, err := sqliteHandler.Conn.Query(sqlStatement)
 	if err != nil {
@@ -180,10 +170,14 @@ func ListDecks(c *client) {
 		var deckID string
 		var deckName string
 		err = rows.Scan(&deckID, &deckName)
+		if err != nil {
+			return
+		}
 		c.msg(fmt.Sprintf("%s : %s\n", deckID, deckName))
 	}
 }
-////////////check that deck name is already existed or not////////////////////////////
+
+////////////Check that deck name is already existed or not////////////////////////////
 func checkDeckExist(deckname string) int {
 	var result int
 	statement := `SELECT COUNT(*) FROM learninghub.Deck_instance where learninghub.Deck_instance.deckName = ?;`
@@ -200,6 +194,18 @@ func checkDeckExist(deckname string) int {
 	return result
 }
 
+////////////time measure//////////////////////////
+func timesup() {
+	fmt.Println("testing countdown")
+	i := 10
+	for i > 0 {
+		fmt.Printf("%2d\r", i)
+		time.Sleep((time.Second))
+		i = i - 1
+	}
+	fmt.Println("test sucess")
+
+}
 func checkDeckId(deckname string) (int, error) {
 	var checkid int
 	sqlStatement := `SELECT deckId FROM Deck_instance WHERE deckName = ? ORDER BY deckId DESC LIMIT 1 ` //check the lastest deckId and we will put it in the flashcard table
@@ -216,7 +222,7 @@ func checkDeckId(deckname string) (int, error) {
 	return checkid, nil
 }
 
-func createDeck(c*client, deckname string) bool {
+func createDeck(c *client, deckname string) bool {
 	if checkDeckExist(deckname) == 0 {
 		sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
 		_, err := sqliteHandler.Conn.Exec(sqlStatement, deckname)
@@ -232,8 +238,17 @@ func createDeck(c*client, deckname string) bool {
 	}
 }
 
-func (s *server) createfc(c *client, namefc string, total string) {
-	//create fc
+func createfc(c *client, listFC []Flashcard) {
+	sqlStatement := `
+		INSERT INTO Flashcard_instance(deckId,term,definition)
+		VALUES(?,?,?)`
+	for _, item := range listFC {
+		// c.msg(fmt.Sprintf("%d, %s, %s\n", item.deckID, item.term, item.definition))
+		_, err := sqliteHandler.Conn.Exec(sqlStatement, item.deckID, item.term, item.definition)
+		if err != nil {
+			return
+		}
+	}
 }
 
 func (s *server) login(c *client, username string, pass string) {
@@ -252,11 +267,10 @@ func (s *server) listRooms(c *client) {
 	c.msg(fmt.Sprintf("There are currently %d rooms", len(rooms)))
 	c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ", ")))
 
-
 }
 
 func (s *server) msg(c *client, args []string) {
-	msg := strings.Join(args[1:len(args)], " ")
+	msg := strings.Join(args[1:], " ")
 	c.room.broadcast(c, c.nick+": "+msg)
 }
 
@@ -277,7 +291,19 @@ func (s *server) quitCurrentRoom(c *client) {
 	}
 }
 
-func (s *server) cuser(c *client){
-	// try loop
+func (s *server) cuser(c *client) {
+	// see all number of user in the server
+	return
+}
+
+func (s *server) setroomdeck(c *client, deckid string) {
+	// set room.deckid
+	// var err struct{ c int }
+	deck_id, err := strconv.Atoi(deckid)
+	if err != nil {
+		// c.msg(fmt.Sprintf(err))
+		return
+	}
+	c.room.deckid = deck_id
 	return
 }
