@@ -81,6 +81,8 @@ func (s *server) newClient(conn net.Conn) {
 		nick:     "anonymous",
 		status:   "0",
 		commands: s.commands,
+		score:    0,
+		vaild:    false,
 	}
 
 	c.readInput()
@@ -105,6 +107,10 @@ func (s *server) nick(c *client, nick string) {
 
 func (s *server) croom(c *client, roomName string) {
 
+	if len(roomName) != 1 {
+		c.msg(fmt.Sprint("Invalid Input"))
+	}
+
 	c.msg(fmt.Sprintf("croom %s", roomName))
 	r, ok := s.rooms[roomName]
 
@@ -118,6 +124,7 @@ func (s *server) croom(c *client, roomName string) {
 			members: make(map[net.Addr]*client),
 			host:    ip, // ip of client
 			status:  false,
+			answer:  "",
 		}
 
 		s.rooms[roomName] = r

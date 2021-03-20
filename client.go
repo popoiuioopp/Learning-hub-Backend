@@ -13,6 +13,8 @@ type client struct {
 	room     *room
 	status   string
 	commands chan<- command
+	score    int
+	vaild    bool
 }
 
 func (c *client) readInput() {
@@ -75,7 +77,7 @@ func (c *client) readInput() {
 				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n", c.room.status, c.room.deck.deckID, c.room.host))
 			case "/ready":
 				c.status = "3"
-				c.room.changeroomstatus(c)
+				c.room.Changeroomstatus(c)
 			case "/srd":
 				c.commands <- command{
 					id:     CMD_SRD,
@@ -188,18 +190,33 @@ func (c *client) readInput() {
 			c.status = "0"
 
 		} else if c.status == "3" {
-			if c.room.status == true {
-				// START GAME
-				c.room.GenQuestion(c)
-				c.status = "4"
+			for c.room.status == true {
+				msg, err := bufio.NewReader(c.conn).ReadString('\n')
+				msg = strings.Trim(msg, "\r\n")
+				if err != nil {
+					c.msg(fmt.Sprintf(msg))
+					return
+				}
+				if c.vaild {
+					if msg == c.room.answer {
+						c.msg(fmt.Sprintf("Correct!"))
+						c.score += 1
+					} else {
+						c.msg(fmt.Sprintf("Try Again!"))
+					}
+				} else {
+					c.msg(fmt.Sprintf("You Already Answer!"))
+				}
+
+				c.vaild = false
 			}
 
-		} else if c.status == "4" {
-			answer, err := bufio.NewReader(c.conn).ReadString('\n')
-			if err != nil {
-				fmt.Print(err)
+		} else if c.status == "boardcast" {
+
+			if c.room.status == true {
+				c.room.GenQuestion(c)
 			}
-			answer = strings.Trim(answer, "\r\n")
+
 		}
 	}
 
