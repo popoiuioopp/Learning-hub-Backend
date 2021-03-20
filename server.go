@@ -23,9 +23,16 @@ type SQLHandler struct {
 }
 
 type Flashcard struct {
+	fcID       int
 	term       string
 	definition string
 	deckID     int
+}
+
+type Deck struct {
+	deckID   int
+	deckName string
+	fcArray  *[]Flashcard
 }
 
 var sqliteHandler SQLHandler
@@ -57,10 +64,6 @@ func (s *server) run() {
 			s.startGame(cmd.client)
 		// case CMD_CREATEFC:
 		// 	s.createfc(cmd.client, cmd.args[1], cmd.args[2])
-		case CMD_LOGIN:
-			s.login(cmd.client, cmd.args[1], cmd.args[2])
-		case CMD_REGIS:
-			s.regis(cmd.client, cmd.args[1], cmd.args[2], cmd.args[3])
 		case CMD_CUSER:
 			s.cuser(cmd.client)
 		case CMD_SRD:
@@ -109,11 +112,11 @@ func (s *server) croom(c *client, roomName string) {
 
 		//c.msg(fmt.Sprintf("Select Your Flashcard..."))
 		// Put Select Flashcard Function From Boss Here
-
+		ip := c.conn.RemoteAddr().String()
 		r = &room{
 			name:    roomName,
 			members: make(map[net.Addr]*client),
-			host:    "host_id", // Host ID
+			host:    ip, // ip of client
 			status:  false,
 		}
 
@@ -195,17 +198,11 @@ func checkDeckExist(deckname string) int {
 }
 
 ////////////time measure//////////////////////////
-func timesup() {
-	fmt.Println("testing countdown")
-	i := 10
-	for i > 0 {
-		fmt.Printf("%2d\r", i)
-		time.Sleep((time.Second))
-		i = i - 1
-	}
-	fmt.Println("test sucess")
-
+func timesup(c *client, msg string) {
+	c.msg(msg)
+	time.Sleep(3 * time.Second)
 }
+
 func checkDeckId(deckname string) (int, error) {
 	var checkid int
 	sqlStatement := `SELECT deckId FROM Deck_instance WHERE deckName = ? ORDER BY deckId DESC LIMIT 1 ` //check the lastest deckId and we will put it in the flashcard table
@@ -251,14 +248,6 @@ func createfc(c *client, listFC []Flashcard) {
 	}
 }
 
-func (s *server) login(c *client, username string, pass string) {
-	//login
-}
-
-func (s *server) regis(c *client, username string, pass string, verifypass string) {
-	//regis
-}
-
 func (s *server) listRooms(c *client) {
 	var rooms []string
 	for name := range s.rooms {
@@ -282,7 +271,6 @@ func (s *server) quit(c *client) {
 	c.msg("sad to see you go =(")
 	c.conn.Close()
 }
-
 func (s *server) quitCurrentRoom(c *client) {
 	if c.room != nil {
 		oldRoom := s.rooms[c.room.name]
@@ -292,18 +280,47 @@ func (s *server) quitCurrentRoom(c *client) {
 }
 
 func (s *server) cuser(c *client) {
-	// see all number of user in the server
+	// see all number of user in the server or room
 	return
 }
 
 func (s *server) setroomdeck(c *client, deckid string) {
 	// set room.deckid
 	// var err struct{ c int }
-	deck_id, err := strconv.Atoi(deckid)
-	if err != nil {
-		// c.msg(fmt.Sprintf(err))
+	if c.conn.RemoteAddr().String() == c.room.host {
+		deck_id, err := strconv.Atoi(deckid)
+		if err != nil {
+			c.msg(fmt.Sprintf("%s\n", err))
+		}
+		sqlStatement := `select Deck_instance.deckName, Deck_instance.deckId, 
+		Flashcard_instance.flashcardID, Flashcard_instance.Term, 
+		Flashcard_instance.definition from Flashcard_instance 
+		inner join Deck_instance
+		on Flashcard_instance.deckId = Deck_instance.deckId
+		where Deck_instance.deckId = ?; `
+		rows, err := sqliteHandler.Conn.Query(sqlStatement, deckid)
+		if err != nil {
+			return
+		}
+		var fcArray []Flashcard
+		for rows.Next() {
+			var tempFC Flashcard
+			tempFC.deckID = deck_id
+			err := rows.Scan(&c.room.deck.deckName, &c.room.deck.deckID,
+				&tempFC.fcID, &tempFC.term, &tempFC.definition)
+			fcArray = append(fcArray, tempFC)
+			if err != nil {
+				return
+			}
+		}
+		c.room.deck.fcArray = &fcArray
+		c.msg(fmt.Sprintf("This room have these shit\nDeckID=%d\nDeckName=%s\n", c.room.deck.deckID, c.room.deck.deckName))
+		for _, item := range *c.room.deck.fcArray {
+			c.msg(fmt.Sprintf("%d, %d, %s, %s\n", item.fcID, item.deckID, item.term, item.definition))
+		}
+		return
+	} else {
+		c.msg(fmt.Sprintf("You don't have the permission to change the room deck!"))
 		return
 	}
-	c.room.deckid = deck_id
-	return
 }

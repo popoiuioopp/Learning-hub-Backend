@@ -18,6 +18,9 @@ type client struct {
 func (c *client) readInput() {
 	for {
 		if c.status == "0" {
+			c.msg(fmt.Sprint("----Ready for your command----"))
+			// ip := c.conn.RemoteAddr().String()
+			// c.msg(fmt.Sprintf("Test Print %s", ip))
 			msg, err := bufio.NewReader(c.conn).ReadString('\n')
 			if err != nil {
 				c.msg(fmt.Sprintf(msg))
@@ -64,21 +67,21 @@ func (c *client) readInput() {
 					client: c,
 					args:   args,
 				}
+			case "/cfc":
+				c.status = "1"
+			case "/rfc":
+				c.status = "2"
+			case "/rstatus":
+				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n", c.room.status, c.room.deck.deckID, c.room.host))
+			case "/ready":
+				c.status = "3"
+				c.room.changeroomstatus(c)
 			case "/srd":
 				c.commands <- command{
 					id:     CMD_SRD,
 					client: c,
 					args:   args,
 				}
-			case "/cfc":
-				c.status = "1"
-
-			case "/rfc":
-				c.status = "2"
-			case "/rstatus":
-				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d\n", c.room.status, c.room.deckid))
-			case "/ready":
-				c.status = "3"
 			case "/cuser":
 				c.msg(fmt.Sprintf("current user: "))
 			default:
@@ -185,48 +188,18 @@ func (c *client) readInput() {
 			c.status = "0"
 
 		} else if c.status == "3" {
-
-			gamestatus := c.room.changeroomstatus(c)
-
-			if gamestatus == 1 {
+			if c.room.status == true {
 				// START GAME
-				// REMOVE IT LATER ON
-				// msg123 := "/cfc text 123"
-				// args := strings.Split(msg123, " ")
-
-				// c.commands <- command{
-				// 	id:     CMD_START,
-				// 	client: c,
-				// 	args:   args,
-				//}
+				c.room.GenQuestion(c)
+				c.status = "4"
 			}
 
-			idle := 1
-			for idle == 1 {
-				c.msg(fmt.Sprintf("Now idle =%d", idle))
-				cmd, err := bufio.NewReader(c.conn).ReadString('\n')
-
-				if err != nil {
-					c.msg(fmt.Sprintf(cmd))
-					return
-				}
-				if c.room.status == true {
-					for i := 0; i <= 10; i++ {
-						cmd, err := bufio.NewReader(c.conn).ReadString('\n')
-						c.msg(fmt.Sprintf(cmd))
-						if err != nil {
-							c.msg(fmt.Sprintf(cmd))
-							return
-						}
-					}
-					idle = 0
-					continue
-
-				} else {
-					c.msg(fmt.Sprintf("The Game Haven't Start Yet!"))
-				}
+		} else if c.status == "4" {
+			answer, err := bufio.NewReader(c.conn).ReadString('\n')
+			if err != nil {
+				fmt.Print(err)
 			}
-			c.status = "0"
+			answer = strings.Trim(answer, "\r\n")
 		}
 	}
 
