@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"strconv"
 	"strings"
 )
 
 // global var
 var totaluser int
-var totalUserRoom int
 
 type server struct {
 	rooms    map[string]*room
@@ -76,7 +76,6 @@ func (s *server) nick(c *client, nick string) {
 	c.nick = nick
 	c.msg(fmt.Sprintf("all right, I will call you %s", nick))
 	c.msg(fmt.Sprintf("Total user : %d", totaluser))
-	c.msg(fmt.Sprintf("Total in room : %d", totalUserRoom))
 }
 
 func (s *server) croom(c *client, roomName string) {
@@ -124,7 +123,7 @@ func (s *server) join(c *client, roomName string) {
 	c.room = r
 
 	r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
-	totalUserRoom += 1
+	r.broadcast(c, fmt.Sprintf("Total player in the room : %d", len(r.members)))
 	c.msg(fmt.Sprintf("welcome to %s", roomName))
 }
 
@@ -148,9 +147,13 @@ func (s *server) listRooms(c *client) {
 	var rooms []string
 	for name := range s.rooms {
 		rooms = append(rooms, name)
+		r := s.rooms[name]
+		rooms = append(rooms, strconv.Itoa(len(r.members)))
+		// c.msg(fmt.Sprintf("name : %d & %s", len(r.members), name))
 	}
-	c.msg(fmt.Sprintf("total rooms: %d", len(rooms)))
-	// c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ", ")))
+	c.msg(fmt.Sprintf("total rooms: %d", len(rooms)/2))
+	c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ", ")))
+
 }
 
 func (s *server) msg(c *client, args []string) {
