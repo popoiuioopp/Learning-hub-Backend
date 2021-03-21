@@ -15,22 +15,23 @@ type client struct {
 	commands chan<- command
 	score    int
 	vaild    bool
+	no_ques  int
 }
 
 func (c *client) readInput() {
 	for {
+
+		msg, err := bufio.NewReader(c.conn).ReadString('\n')
+		if err != nil {
+			c.msg(fmt.Sprintf(msg))
+			return
+		}
+		msg = strings.Trim(msg, "\r\n")
+
 		if c.status == "0" {
-			c.msg(fmt.Sprint("----Ready for your command----"))
+			// c.msg(fmt.Sprint("----Ready for your command----"))
 			// ip := c.conn.RemoteAddr().String()
 			// c.msg(fmt.Sprintf("Test Print %s", ip))
-			msg, err := bufio.NewReader(c.conn).ReadString('\n')
-			if err != nil {
-				c.msg(fmt.Sprintf(msg))
-				return
-			}
-
-			msg = strings.Trim(msg, "\r\n")
-
 			args := strings.Split(msg, " ")
 			cmd := strings.TrimSpace(args[0])
 
@@ -71,12 +72,23 @@ func (c *client) readInput() {
 				}
 			case "/cfc":
 				c.status = "1"
+				c.msg(fmt.Sprintf("Name Your Deck: "))
 			case "/rfc":
 				c.status = "2"
+				ListDecks(c)
+				c.msg(fmt.Sprintf("Pls Choose your deck by type in deck id"))
 			case "/rstatus":
 				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n", c.room.status, c.room.deck.deckID, c.room.host))
 			case "/ready":
-				c.status = "3"
+				if c.room.host == c.conn.RemoteAddr().String() {
+					if c.room.deck.deckID == 0 {
+						c.msg(fmt.Sprintf("Please Specify Your Deck First"))
+					} else {
+						c.status = "broadcast"
+					}
+				} else {
+					c.status = "3"
+				}
 				c.room.Changeroomstatus(c)
 			case "/srd":
 				c.commands <- command{
@@ -90,12 +102,8 @@ func (c *client) readInput() {
 				c.err(fmt.Errorf("unknown command: %s", cmd))
 			}
 		} else if c.status == "1" {
-			c.msg(fmt.Sprintf("Name Your Deck: "))
-			deckname, err := bufio.NewReader(c.conn).ReadString('\n')
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+
+			deckname := msg
 			if !createDeck(c, deckname) {
 				c.status = "0"
 				c.msg(fmt.Sprintf("you are in the lobby now "))
@@ -126,16 +134,6 @@ func (c *client) readInput() {
 						c.status = "0"
 						createfc(c, fcList)
 						c.msg(fmt.Sprintf("You are in lobby now"))
-
-						// REMOVE IT LATER ON
-						// msg123 := "/cfc text 123"
-						// args := strings.Split(msg123, " ")
-
-						// c.commands <- command{
-						// 	id: CMD_CREATEFC,
-						// 	client: c,
-						// 	args:	args,
-						// }
 						c.msg(fmt.Sprintf("Done creating flashcard"))
 						break
 					default:
@@ -158,14 +156,10 @@ func (c *client) readInput() {
 				}
 			}
 		} else if c.status == "2" {
-			ListDecks(c)
-			deckid, err := bufio.NewReader(c.conn).ReadString('\n')
-			if err != nil {
-				c.msg(fmt.Sprintf(deckid))
-				return
-			}
+
+			deckid := msg
 			c.msg(fmt.Sprintf("Deckid: %s\n", deckid))
-			c.msg(fmt.Sprintf("Pls Choose your deck by type in deck id"))
+
 			//query fc from db
 
 			// query
@@ -190,33 +184,41 @@ func (c *client) readInput() {
 			c.status = "0"
 
 		} else if c.status == "3" {
-			for c.room.status == true {
-				msg, err := bufio.NewReader(c.conn).ReadString('\n')
-				msg = strings.Trim(msg, "\r\n")
-				if err != nil {
-					c.msg(fmt.Sprintf(msg))
-					return
-				}
-				if c.vaild {
-					if msg == c.room.answer {
-						c.msg(fmt.Sprintf("Correct!"))
-						c.score += 1
-					} else {
-						c.msg(fmt.Sprintf("Try Again!"))
-					}
-				} else {
-					c.msg(fmt.Sprintf("You Already Answer!"))
-				}
-
-				c.vaild = false
-			}
-
-		} else if c.status == "boardcast" {
 
 			if c.room.status == true {
-				c.room.GenQuestion(c)
+				if c.no_ques <= c.room.no_fc {
+
+					if c.vaild {
+						if msg == c.room.answer {
+							c.msg(fmt.Sprintf("Correct!"))
+							c.score += 1
+							if c.no_ques == c.room.no_fc {
+								c.no_ques += 1
+							}
+						} else {
+							c.msg(fmt.Sprintf("Try Again!"))
+							if c.no_ques == c.room.no_fc {
+								c.no_ques += 1
+							}
+						}
+						c.vaild = false
+					} else {
+						c.msg(fmt.Sprintf("You Already Answer!"))
+					}
+
+				} else {
+					c.msg(fmt.Sprintf("Game finish!!!"))
+					c.msg(fmt.Sprintf("Wait others to finish..."))
+				}
+
+			} else {
+				c.msg(fmt.Sprintf("Wait other to be ready!"))
 			}
 
+		}
+
+		if c.status == "broadcast" {
+			c.room.GenQuestion(c)
 		}
 	}
 

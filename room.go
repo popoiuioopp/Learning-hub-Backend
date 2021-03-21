@@ -14,6 +14,7 @@ type room struct {
 	host    string
 	status  bool
 	answer  string
+	no_fc   int
 }
 
 type detail struct {
@@ -33,15 +34,14 @@ func (r *room) broadcast(sender *client, msg string) {
 
 func (r *room) Changeroomstatus(sender *client) {
 	for _, m := range r.members {
-		if m.status != "3" {
-			// sender.msg(fmt.Sprintf("Client [%s] -> %s", addr, m.status))
-			r.broadcast(m, fmt.Sprintf("These users are nor ready: %s\n", m.conn.RemoteAddr().String()))
-			sender.msg(fmt.Sprintf("Cannot Start!"))
+		if sender.conn.RemoteAddr().String() == r.host && r.deck.deckID == 0 {
+			return
+		} else if m.status != "3" && m.status != "broadcast" {
+			sender.msg(fmt.Sprintf("Wait other players to be ready"))
 			return
 		}
 	}
 	sender.msg(fmt.Sprintf("Game Start!"))
-	sender.status = "boardcast"
 	r.status = true
 	return
 }
@@ -59,23 +59,28 @@ func (r *room) Changeroomstatus(sender *client) {
 // }
 
 func (r *room) GenQuestion(sender *client) {
+
+	for !r.status {
+	}
+
 	for _, fc := range *r.deck.fcArray {
+		r.answer = fc.term
+		r.currFC = fc
 		for addr, m := range r.members {
-			m.vaild = true
-			r.answer = fc.term
-			r.currFC = fc
 			if sender.conn.RemoteAddr() != addr {
+				m.no_ques += 1
+				m.vaild = true
 				m.msg(fmt.Sprintf("%s\n", fc.definition))
 			}
 		}
-		time.Sleep(15 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
-	r.status = false
 
 	var name []string
 	maximum := -1
-
+	////////check score///////
 	for _, m := range r.members {
+		m.no_ques += 1
 		if m.score >= maximum {
 			if m.score > maximum {
 				maximum = m.score
@@ -96,9 +101,13 @@ func (r *room) GenQuestion(sender *client) {
 	}
 
 	for _, m := range r.members {
+		m.score = 0
 		m.vaild = false
 		m.status = "0"
+		m.no_ques = 0
 	}
+	r.status = false
+	r.deck.deckID = 0
 }
 
 /*

@@ -83,6 +83,7 @@ func (s *server) newClient(conn net.Conn) {
 		commands: s.commands,
 		score:    0,
 		vaild:    false,
+		no_ques:  0,
 	}
 
 	c.readInput()
@@ -125,6 +126,7 @@ func (s *server) croom(c *client, roomName string) {
 			host:    ip, // ip of client
 			status:  false,
 			answer:  "",
+			no_fc:   0,
 		}
 
 		s.rooms[roomName] = r
@@ -148,19 +150,22 @@ func (s *server) croom(c *client, roomName string) {
 func (s *server) join(c *client, roomName string) {
 	r, ok := s.rooms[roomName]
 	if !ok {
-
 		c.msg(fmt.Sprintf("Room is not available!"))
 		return
 	}
-	r.members[c.conn.RemoteAddr()] = c
+	if r.status == false {
+		r.members[c.conn.RemoteAddr()] = c
 
-	s.quitCurrentRoom(c)
-	c.room = r
+		s.quitCurrentRoom(c)
+		c.room = r
 
-	r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
+		r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
 
-	c.msg(fmt.Sprintf("welcome to %s", roomName))
-	c.msg(fmt.Sprintf("if you want to play the game type ready"))
+		c.msg(fmt.Sprintf("welcome to %s", roomName))
+		c.msg(fmt.Sprintf("if you want to play the game type ready"))
+	} else {
+		c.msg(fmt.Sprintf("game already start"))
+	}
 
 }
 
@@ -320,6 +325,7 @@ func (s *server) setroomdeck(c *client, deckid string) {
 				return
 			}
 		}
+		c.room.no_fc = len(fcArray)
 		c.room.deck.fcArray = &fcArray
 		c.msg(fmt.Sprintf("This room have these shit\nDeckID=%d\nDeckName=%s\n", c.room.deck.deckID, c.room.deck.deckName))
 		for _, item := range *c.room.deck.fcArray {
