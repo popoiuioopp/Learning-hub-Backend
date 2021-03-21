@@ -121,6 +121,7 @@ func NewRedisConn() {
 		panic(err)
 	} else {
 		fmt.Println("Connected to Redis")
+		redisHandler.Client.FlushAll().Result()
 	}
 }
 
@@ -372,6 +373,7 @@ func (s *server) setroomdeck(c *client, deckid string) {
 				if err != nil {
 					return
 				}
+				c.room.deck.FcArray = &fcArray
 			}
 
 			var jsonData []byte
