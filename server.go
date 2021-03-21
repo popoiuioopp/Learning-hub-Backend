@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net"
@@ -10,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -24,25 +22,20 @@ type SQLHandler struct {
 	Conn *sql.DB
 }
 
-type RedisClient struct {
-	Client *redis.Client
-}
-
 type Flashcard struct {
-	FcID       int
-	Term       string
-	Definition string
-	DeckID     int
+	fcID       int
+	term       string
+	definition string
+	deckID     int
 }
 
 type Deck struct {
-	DeckID   int
-	DeckName string
-	FcArray  *[]Flashcard
+	deckID   int
+	deckName string
+	fcArray  *[]Flashcard
 }
 
 var sqliteHandler SQLHandler
-var redisHandler RedisClient
 
 func newServer() *server {
 	return &server{
@@ -67,6 +60,8 @@ func (s *server) run() {
 			s.quit(cmd.client)
 		case CMD_CROOM:
 			s.croom(cmd.client, cmd.args[1])
+		case CMD_START:
+			s.startGame(cmd.client)
 		// case CMD_CREATEFC:
 		// 	s.createfc(cmd.client, cmd.args[1], cmd.args[2])
 		case CMD_CUSER:
@@ -94,7 +89,7 @@ func (s *server) newClient(conn net.Conn) {
 	c.readInput()
 }
 
-func NewDBConn() {
+func newDBConn() {
 	fmt.Println("Connecting to database...")
 	db, err := sql.Open("mysql", "learninghub:FgTQTzNM62cC63K@tcp(143.198.204.127:3306)/learninghub")
 	if err != nil {
@@ -106,32 +101,15 @@ func NewDBConn() {
 	sqliteHandler.Conn = db
 }
 
-//NewClient will create new Redis client
-func NewRedisConn() {
-	fmt.Println("Connecting to Redis....")
-	redisClient := redis.NewClient(&redis.Options{
-		Network:  "tcp",
-		Addr:     "localhost:6379",
-		Password: "", // no password
-		DB:       0,  // default DB
-	})
-	redisHandler.Client = redisClient
-	_, err := redisHandler.Client.Ping().Result()
-	if err != nil {
-		panic(err)
-	} else {
-		fmt.Println("Connected to Redis")
-	}
-}
-
 func (s *server) nick(c *client, nick string) {
+
 	c.msg(fmt.Sprint(nick))
 	if len(nick) == 0 {
 		c.msg(fmt.Sprintf("Invalid syntax"))
 	}
 
 	c.nick = nick
-	c.msg(fmt.Sprintf("all right, We will call you %s", nick))
+	c.msg(fmt.Sprintf("all right, I will call you %s", nick))
 }
 
 func (s *server) croom(c *client, roomName string) {
@@ -198,6 +176,11 @@ func (s *server) join(c *client, roomName string) {
 
 }
 
+func (s *server) startGame(c *client) int {
+	// BROADCAST QUESTION
+	return 0
+}
+
 //////list all deck//////////////////////
 func ListDecks(c *client) {
 	sqlStatement := "select deckid, deckName from Deck_instance;"
@@ -219,8 +202,7 @@ func ListDecks(c *client) {
 ////////////Check that deck name is already existed or not////////////////////////////
 func checkDeckExist(deckname string) int {
 	var result int
-	statement := `SELECT COUNT(*) FROM learninghub.Deck_instance 
-	where learninghub.Deck_instance.deckName = ?;`
+	statement := `SELECT COUNT(*) FROM learninghub.Deck_instance where learninghub.Deck_instance.deckName = ?;`
 	rows, err := sqliteHandler.Conn.Query(statement, deckname)
 	if err != nil {
 		return 1
@@ -234,35 +216,15 @@ func checkDeckExist(deckname string) int {
 	return result
 }
 
-////////////Check that deck name is already existed or not////////////////////////////
-func checkDeckIdExist(deckid int) int {
-	var result int
-	statement := `SELECT COUNT(*) FROM learninghub.Deck_instance 
-	where learninghub.Deck_instance.deckId = ?;`
-	rows, err := sqliteHandler.Conn.Query(statement, deckid)
-	if err != nil {
-		return 0
-	}
-	for rows.Next() {
-		err = rows.Scan(&result)
-		if err != nil {
-			return 0
-		}
-	}
-	return 1
-}
-
 ////////////time measure//////////////////////////
 func timesup(c *client, msg string) {
 	c.msg(msg)
 	time.Sleep(3 * time.Second)
 }
 
-//check the lastest deckId and we will put it in the flashcard table
 func checkDeckId(deckname string) (int, error) {
 	var checkid int
-	sqlStatement := `SELECT deckId FROM Deck_instance 
-		WHERE deckName = ? ORDER BY deckId DESC LIMIT 1 `
+	sqlStatement := `SELECT deckId FROM Deck_instance WHERE deckName = ? ORDER BY deckId DESC LIMIT 1 ` //check the lastest deckId and we will put it in the flashcard table
 	rows, err := sqliteHandler.Conn.Query(sqlStatement, deckname)
 	if err != nil {
 		return 0, err
@@ -298,7 +260,7 @@ func createfc(c *client, listFC []Flashcard) {
 		VALUES(?,?,?)`
 	for _, item := range listFC {
 		// c.msg(fmt.Sprintf("%d, %s, %s\n", item.deckID, item.term, item.definition))
-		_, err := sqliteHandler.Conn.Exec(sqlStatement, item.DeckID, item.Term, item.Definition)
+		_, err := sqliteHandler.Conn.Exec(sqlStatement, item.deckID, item.term, item.definition)
 		if err != nil {
 			return
 		}
@@ -343,60 +305,38 @@ func (s *server) cuser(c *client) {
 
 func (s *server) setroomdeck(c *client, deckid string) {
 	// set room.deckid
-
+	// var err struct{ c int }
 	if c.conn.RemoteAddr().String() == c.room.host {
 		deck_id, err := strconv.Atoi(deckid)
 		if err != nil {
 			c.msg(fmt.Sprintf("%s\n", err))
 		}
-		unmar, err := redisHandler.Client.Get(deckid).Result()
-		if err == redis.Nil {
-			// deckStructRedis, err := redisHandler.Client.Get(deckid).Result()
-			sqlStatement := `select Deck_instance.deckName, Deck_instance.deckId, 
+		sqlStatement := `select Deck_instance.deckName, Deck_instance.deckId, 
 		Flashcard_instance.flashcardID, Flashcard_instance.Term, 
 		Flashcard_instance.definition from Flashcard_instance 
 		inner join Deck_instance
 		on Flashcard_instance.deckId = Deck_instance.deckId
 		where Deck_instance.deckId = ?; `
-			rows, err := sqliteHandler.Conn.Query(sqlStatement, deck_id)
-			if err != nil {
-				return
-			}
-			var fcArray []Flashcard
-			for rows.Next() {
-				var tempFC Flashcard
-				tempFC.DeckID = deck_id
-				err := rows.Scan(&c.room.deck.DeckName, &c.room.deck.DeckID,
-					&tempFC.FcID, &tempFC.Term, &tempFC.Definition)
-				fcArray = append(fcArray, tempFC)
-				if err != nil {
-					return
-				}
-			}
-
-			var jsonData []byte
-			jsonData, err = json.Marshal(c.room.deck)
-			if err != nil {
-				return
-			}
-			redisHandler.Client.Set(fmt.Sprintf("%d", c.room.deck.DeckID), string(jsonData), 0)
-			// fmt.Print(string(jsonData))
-			jsonData = nil
-		} else {
-			b := []byte(unmar)
-			deck := &Deck{}
-			err = json.Unmarshal(b, deck)
-			if err != nil {
-				return
-			}
-			c.room.deck = *deck
+		rows, err := sqliteHandler.Conn.Query(sqlStatement, deckid)
+		if err != nil {
+			return
 		}
-		c.room.no_fc = len(*c.room.deck.FcArray)
-		c.msg(fmt.Sprintf("This room have these detail\nDeckID=%d\nDeckName=%s\n",
-			c.room.deck.DeckID, c.room.deck.DeckName))
-		for _, item := range *c.room.deck.FcArray {
-			c.msg(fmt.Sprintf("%d, %d, %s, %s\n", item.FcID, item.DeckID, item.Term,
-				item.Definition))
+		var fcArray []Flashcard
+		for rows.Next() {
+			var tempFC Flashcard
+			tempFC.deckID = deck_id
+			err := rows.Scan(&c.room.deck.deckName, &c.room.deck.deckID,
+				&tempFC.fcID, &tempFC.term, &tempFC.definition)
+			fcArray = append(fcArray, tempFC)
+			if err != nil {
+				return
+			}
+		}
+		c.room.no_fc = len(fcArray)
+		c.room.deck.fcArray = &fcArray
+		c.msg(fmt.Sprintf("This room have these shit\nDeckID=%d\nDeckName=%s\n", c.room.deck.deckID, c.room.deck.deckName))
+		for _, item := range *c.room.deck.fcArray {
+			c.msg(fmt.Sprintf("%d, %d, %s, %s\n", item.fcID, item.deckID, item.term, item.definition))
 		}
 		return
 	} else {
