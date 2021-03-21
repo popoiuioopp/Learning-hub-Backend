@@ -38,10 +38,14 @@ func (c *client) readInput() {
 
 			switch cmd {
 			case "/nick":
-				c.commands <- command{
-					id:     CMD_NICK,
-					client: c,
-					args:   args,
+				if len(args) != 1 {
+					c.commands <- command{
+						id:     CMD_NICK,
+						client: c,
+						args:   args,
+					}
+				} else {
+					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/join":
 				c.commands <- command{

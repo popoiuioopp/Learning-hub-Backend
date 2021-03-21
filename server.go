@@ -102,6 +102,12 @@ func newDBConn() {
 }
 
 func (s *server) nick(c *client, nick string) {
+
+	c.msg(fmt.Sprint(nick))
+	if len(nick) == 0 {
+		c.msg(fmt.Sprintf("Invalid syntax"))
+	}
+
 	c.nick = nick
 	c.msg(fmt.Sprintf("all right, I will call you %s", nick))
 }
