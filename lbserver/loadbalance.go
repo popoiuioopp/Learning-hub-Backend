@@ -24,8 +24,8 @@ func (b *Backends) String() string {
 }
 
 var (
-    bind     = flag.String("bind", "", "The address to bind on")
-    balance  = flag.String("balance", "", "The backend servers to balance connections across, separated by commas")
+    bind     = flag.String("bind", ":5000", "The address to bind on")
+    balance  = flag.String("balance", "172.27.0.4, 172.27.0.5", "The backend servers to balance connections across, separated by commas")
     backends *Backends
 )
 
@@ -62,7 +62,9 @@ func handleConnection(us net.Conn, server string) {
 }
 
 func main() {
+
     ln, err := net.Listen("tcp", *bind)
+
     if err != nil {
         log.Fatalf("failed to bind: %s", err)
     }

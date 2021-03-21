@@ -5,17 +5,18 @@ version: '3'
 # Define services
 services:
 
-  # load balancer
   lbserver:
     # Configuration for building the docker image for the service
     build:
-      context: ./load-balancer # Use an image built from the specified dockerfile in the current directory.
+      context: ./lbserver # Use an image built from the specified dockerfile in the current directory.
       dockerfile: Dockerfile
-    container_name: load-balancer
+    container_name: lbserver
+    restart: unless-stopped
     ports:
       - "5000:5000" # Forward the exposed port 5000 on the container to port 5000 on the host machine
-    restart: unless-stopped
     depends_on:
+      - server1  # This service depends on server1. Start that first.
+      - server2 # This service depends on server2. Start that first.
       - mysql # This service depends on mysql. Start that first.
       - redis # This service depends on redis. Start that first.
     environment: # Pass environment variables to the service
@@ -23,17 +24,32 @@ services:
     networks: # Networks to join (Services on the same network can communicate with each other using their name)
       - backend
 
-  gameserver:
+  server1:
     build:
-      context: ./game-server
+      context: ./server-1
       dockerfile: Dockerfile
-    container_name: game-server
+    container_name: server-1
+    restart: unless-stopped
     ports:
       - "5001:5001"
+    depends_on: 
+      - mysql 
+      - redis 
+    networks:
+      - backend
+  
+  server2:
+    build:
+      context: ./server-2
+      dockerfile: Dockerfile
+    container_name: server-2
     restart: unless-stopped
-    depends_on:
-      - lbserver
-    networks: # Networks to join (Services on the same network can communicate with each other using their name)
+    ports:
+      - "5002:5002"
+    depends_on: 
+      - mysql 
+      - redis 
+    networks:
       - backend
 
   # MySQL Service
@@ -48,10 +64,12 @@ services:
       MYSQL_DATABASE: learninghub
     ports:
       - "3306:3306"
+    networks:
+      - backend
 
   # Redis Service
   redis:
-    image: "redis:alpine" # Use a public Redis image to build the redis service
+    image: "redis:alpine" 
     container_name: redis
     restart: unless-stopped
     networks:

@@ -9,7 +9,7 @@ RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
 # Set the Current Working Directory inside the container
-WORKDIR /app
+WORKDIR /load-balance
 
 # Copy go mod and sum files
 COPY go.mod ./
@@ -22,6 +22,9 @@ COPY . .
 
 # Build the Go app
 RUN go build -o main .
+
+# Expose port 5000 to the outside world
+EXPOSE 5000
 
 # Run the executable
 CMD ["./main"]
