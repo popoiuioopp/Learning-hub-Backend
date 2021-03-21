@@ -108,9 +108,10 @@ func (s *server) nick(c *client, nick string) {
 
 func (s *server) croom(c *client, roomName string) {
 
-	if len(roomName) != 1 {
-		c.msg(fmt.Sprint("Invalid Input"))
-	}
+	//c.msg(fmt.Sprint(roomName))
+	// if len(roomName) == 0 {
+	// 	c.msg(fmt.Sprintf("Invalid syntax"))
+	// }
 
 	c.msg(fmt.Sprintf("croom %s", roomName))
 	r, ok := s.rooms[roomName]

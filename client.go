@@ -27,6 +27,7 @@ func (c *client) readInput() {
 			return
 		}
 		msg = strings.Trim(msg, "\r\n")
+		c.msg(fmt.Sprint(msg))
 
 		if c.status == "0" {
 			// c.msg(fmt.Sprint("----Ready for your command----"))
@@ -65,10 +66,14 @@ func (c *client) readInput() {
 					client: c,
 				}
 			case "/croom":
-				c.commands <- command{
-					id:     CMD_CROOM,
-					client: c,
-					args:   args,
+				if len(args) == 2 {
+					c.commands <- command{
+						id:     CMD_CROOM,
+						client: c,
+						args:   args,
+					}
+				} else {
+					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/cfc":
 				c.status = "1"
