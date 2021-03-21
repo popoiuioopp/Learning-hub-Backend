@@ -50,16 +50,16 @@ func copy(wc io.WriteCloser, r io.Reader) {
 	io.Copy(wc, r)
 }
 
-func handleConnection(us net.Conn, server string) {
-	ds, err := net.Dial("tcp", server)
+func handleConnection(userSide net.Conn, server string) {
+	backendSide, err := net.Dial("tcp", server)
 	if err != nil {
-		us.Close()
+		userSide.Close()
 		log.Printf("failed to dial %s: %s", server, err)
 		return
 	}
 
-	go copy(ds, us)
-	go copy(us, ds)
+	go copy(backendSide, userSide)
+	go copy(userSide, backendSide)
 
 }
 
