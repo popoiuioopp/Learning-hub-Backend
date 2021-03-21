@@ -51,7 +51,7 @@ services:
       - redis 
     networks:
       - backend
-
+  
   # MySQL Service
   mysql:
     image: mysql
@@ -62,6 +62,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: FgTQTzNM62cC63K
       MYSQL_DATABASE: learninghub
+    restart: always
     ports:
       - "3306:3306"
     networks:
