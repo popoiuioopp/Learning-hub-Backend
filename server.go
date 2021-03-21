@@ -73,9 +73,9 @@ func (s *server) run() {
 }
 
 func (s *server) newClient(conn net.Conn) {
-	log.Printf("new client has joined: %s", conn.RemoteAddr().String())
 	s.num_user += 1
-
+	// log.Printf("new client has joined: %s (total user = %d)", conn.RemoteAddr().String(), s.num_user)
+	log.Printf("total user = %d  || total room = %d", s.num_user, len(s.rooms))
 	c := &client{
 		conn:     conn,
 		nick:     "anonymous",
@@ -157,10 +157,10 @@ func (s *server) join(c *client, roomName string) {
 	s.quitCurrentRoom(c)
 	c.room = r
 
-	r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
-
-	c.msg(fmt.Sprintf("welcome to %s", roomName))
-	c.msg(fmt.Sprintf("if you want to play the game type ready"))
+	// r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
+	r.broadcast(c, fmt.Sprintf("Total player in the room : %d", len(r.members)))
+	// c.msg(fmt.Sprintf("welcome to %s", roomName))
+	// c.msg(fmt.Sprintf("if you want to play the game type ready"))
 
 }
 
@@ -259,8 +259,10 @@ func (s *server) listRooms(c *client) {
 	var rooms []string
 	for name := range s.rooms {
 		rooms = append(rooms, name)
+		r := s.rooms[name]
+		rooms = append(rooms, strconv.Itoa(len(r.members)))
 	}
-	c.msg(fmt.Sprintf("There are currently %d rooms", len(rooms)))
+	c.msg(fmt.Sprintf("There are currently %d rooms", len(rooms)/2))
 	c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ", ")))
 
 }
