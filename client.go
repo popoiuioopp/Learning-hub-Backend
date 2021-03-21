@@ -2,9 +2,12 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
+
+	"github.com/go-redis/redis"
 )
 
 type client struct {
@@ -87,10 +90,11 @@ func (c *client) readInput() {
 				ListDecks(c)
 				c.msg(fmt.Sprintf("Pls Choose your deck by type in deck id"))
 			case "/rstatus":
-				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n", c.room.status, c.room.deck.deckID, c.room.host))
+				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n",
+					c.room.status, c.room.deck.DeckID, c.room.host))
 			case "/ready":
 				if c.room.host == c.conn.RemoteAddr().String() {
-					if c.room.deck.deckID == 0 {
+					if c.room.deck.DeckID == 0 {
 						c.msg(fmt.Sprintf("Please Specify Your Deck First"))
 					} else {
 						c.status = "broadcast"
@@ -142,6 +146,7 @@ func (c *client) readInput() {
 					case "/done":
 						c.status = "0"
 						createfc(c, fcList)
+						fcList = nil
 						c.msg(fmt.Sprintf("You are in lobby now"))
 						c.msg(fmt.Sprintf("Done creating flashcard"))
 						break
@@ -155,9 +160,9 @@ func (c *client) readInput() {
 					def := strings.TrimSpace(text[1])
 					c.msg(fmt.Sprintf(term))
 					c.msg(fmt.Sprintf("%s\n", def))
-					tempFC.deckID = deckid
-					tempFC.definition = def
-					tempFC.term = term
+					tempFC.DeckID = deckid
+					tempFC.Definition = def
+					tempFC.Term = term
 					fcList = append(fcList, tempFC)
 				} else {
 					c.msg(fmt.Sprintf("Invalid inputs"))
@@ -170,25 +175,37 @@ func (c *client) readInput() {
 			c.msg(fmt.Sprintf("Deckid: %s\n", deckid))
 
 			//query fc from db
-
-			// query
-			statement := "SELECT term , definition FROM Flashcard_instance WHERE deckId = ?;"
-			rows, err := sqliteHandler.Conn.Query(statement, deckid)
-			if err != nil {
-				fmt.Print(err)
-			}
-
-			for rows.Next() {
-				var term string
-				var definition string
-				err = rows.Scan(&term, &definition)
+			unmar, err := redisHandler.Client.Get("deckid").Result()
+			if err == redis.Nil {
+				// query
+				statement := "SELECT term , definition FROM Flashcard_instance WHERE deckId = ?;"
+				rows, err := sqliteHandler.Conn.Query(statement, deckid)
 				if err != nil {
 					fmt.Print(err)
 				}
-				c.msg(fmt.Sprintf("%s : %s\n", term, definition))
-			}
 
-			rows.Close() //good habit to close
+				for rows.Next() {
+					var term string
+					var definition string
+					err = rows.Scan(&term, &definition)
+					if err != nil {
+						fmt.Print(err)
+					}
+					c.msg(fmt.Sprintf("%s : %s\n", term, definition))
+				}
+
+				rows.Close() //good habit to close
+			} else {
+				b := []byte(unmar)
+				deck := &Deck{}
+				err = json.Unmarshal(b, deck)
+				if err != nil {
+					return
+				}
+				for _, item := range *deck.FcArray {
+					c.msg(fmt.Sprintf("%s : %s\n", item.Term, item.Definition))
+				}
+			}
 
 			c.status = "0"
 
@@ -196,7 +213,6 @@ func (c *client) readInput() {
 
 			if c.room.status == true {
 				if c.no_ques <= c.room.no_fc {
-
 					if c.vaild {
 						if msg == c.room.answer {
 							c.msg(fmt.Sprintf("Correct!"))

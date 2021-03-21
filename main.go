@@ -7,7 +7,8 @@ import (
 
 func main() {
 	s := newServer()
-	newDBConn()
+	NewDBConn()
+	NewRedisConn()
 	defer sqliteHandler.Conn.Close()
 	go s.run()
 

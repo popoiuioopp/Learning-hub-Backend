@@ -34,7 +34,7 @@ func (r *room) broadcast(sender *client, msg string) {
 
 func (r *room) Changeroomstatus(sender *client) {
 	for _, m := range r.members {
-		if sender.conn.RemoteAddr().String() == r.host && r.deck.deckID == 0 {
+		if sender.conn.RemoteAddr().String() == r.host && r.deck.DeckID == 0 {
 			return
 		} else if m.status != "3" && m.status != "broadcast" {
 			sender.msg(fmt.Sprintf("Wait other players to be ready"))
@@ -63,14 +63,14 @@ func (r *room) GenQuestion(sender *client) {
 	for !r.status {
 	}
 
-	for _, fc := range *r.deck.fcArray {
-		r.answer = fc.term
+	for _, fc := range *r.deck.FcArray {
+		r.answer = fc.Term
 		r.currFC = fc
 		for addr, m := range r.members {
 			if sender.conn.RemoteAddr() != addr {
 				m.no_ques += 1
 				m.vaild = true
-				m.msg(fmt.Sprintf("%s\n", fc.definition))
+				m.msg(fmt.Sprintf("%s\n", fc.Definition))
 			}
 		}
 		time.Sleep(5 * time.Second)
@@ -107,7 +107,7 @@ func (r *room) GenQuestion(sender *client) {
 		m.no_ques = 0
 	}
 	r.status = false
-	r.deck.deckID = 0
+	r.deck.DeckID = 0
 }
 
 /*
