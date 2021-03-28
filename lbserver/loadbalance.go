@@ -2,10 +2,12 @@ package main
 
 import (
 	"flag"
+	"bufio"
 	"io"
 	"log"
 	"net"
 	"strings"
+	"strconv"
 )
 
 type Backends struct {
@@ -13,10 +15,11 @@ type Backends struct {
 	n       int
 }
 
-func (b *Backends) Choose() string {
-	idx := b.n % len(b.servers)
-	b.n++
-	return b.servers[idx]
+func (b *Backends) Choose(idx int) string {
+	// idx := b.n % len(b.servers)
+	// b.n++
+	// log.Printf("selected server idx: %d", idx-1)
+	return b.servers[idx-1]
 }
 
 func (b *Backends) String() string {
@@ -25,8 +28,8 @@ func (b *Backends) String() string {
 
 var (
 	bind     = flag.String("bind",":5000","The address to bind on")
-	//balance  = flag.String("balance", "lobby1:5001", "The backend servers to balance connections across, separated by commas")
-	balance  = flag.String("balance", "lobby1:5001,lobby2:5002,lobby3:5003", "The backend servers to balance connections across, separated by commas")
+	//balance  = flag.String("balance", "lobby1:33125", "The backend servers to balance connections across, separated by commas")
+	balance  = flag.String("balance", "lobby1:33125,lobby2:32126,lobby3:31127", "The backend servers to balance connections across, separated by commas")
 	backends *Backends
 )
 
@@ -51,7 +54,16 @@ func copy(wc io.WriteCloser, r io.Reader) {
 	io.Copy(wc, r)
 }
 
-func handleConnection(userSide net.Conn, server string) {
+func handleConnection(userSide net.Conn) {
+
+	userSide.Write([]byte("> Please Select Server\n"))
+	serverId, err := bufio.NewReader(userSide).ReadString('\n')
+	serverId = strings.TrimSuffix(serverId, "\r\n") // remove '\r\n'
+	idx, err := strconv.Atoi(serverId)
+	log.Printf("serverId: %s", serverId)
+	log.Printf("error: %s", err)
+	server := backends.Choose(idx)
+
 	backendSide, err := net.Dial("tcp", server)
 	if err != nil {
 		userSide.Close()
@@ -76,10 +88,11 @@ func main() {
 
 	for {
 		conn, err := ln.Accept()
+
 		if err != nil {
 			log.Printf("failed to accept: %s", err)
 			continue
 		}
-		go handleConnection(conn, backends.Choose())
+		go handleConnection(conn)
 	}
 }

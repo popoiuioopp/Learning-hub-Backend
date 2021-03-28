@@ -12,13 +12,13 @@ func main() {
 	defer sqliteHandler.Conn.Close()
 	go s.run()
 
-	listener, err := net.Listen("tcp", ":5003")
+	listener, err := net.Listen("tcp", ":31127")
 	if err != nil {
 		log.Fatalf("unable to start server: %s", err.Error())
 	}
 
 	defer listener.Close()
-	log.Printf("server started on :5003")
+	log.Printf("server started on :31127")
 
 	for {
 		conn, err := listener.Accept()
