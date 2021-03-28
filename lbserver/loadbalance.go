@@ -24,8 +24,9 @@ func (b *Backends) String() string {
 }
 
 var (
-	bind     = flag.String("bind", ":5000", "The address to bind on")
-	balance  = flag.String("balance", "server1:5001,server2:5002", "The backend servers to balance connections across, separated by commas")
+	bind     = flag.String("bind",":5000","The address to bind on")
+	balance  = flag.String("balance", "lobby1:5001", "The backend servers to balance connections across, separated by commas")
+	//balance  = flag.String("balance", "lobby1:5001,lobby2:5002,lobby3:5003", "The backend servers to balance connections across, separated by commas")
 	backends *Backends
 )
 

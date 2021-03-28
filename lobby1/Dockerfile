@@ -9,7 +9,7 @@ RUN apk update && apk upgrade && \
     apk add --no-cache bash git openssh
 
 # Set the Current Working Directory inside the container
-WORKDIR /server-2
+WORKDIR /lobby-1
 
 # Copy go mod and sum files
 COPY go.mod ./
@@ -21,7 +21,7 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN go build -o main .
+RUN go build .
 
 # Run the executable
-CMD ["./main"]
+CMD ["./Learning-hub-Backend"]
