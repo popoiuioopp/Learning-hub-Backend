@@ -3,8 +3,8 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Mar 07, 2021 at 06:31 PM
--- Server version: 8.0.21-0ubuntu0.20.04.4
+-- Generation Time: Mar 28, 2021 at 09:07 AM
+-- Server version: 8.0.23-0ubuntu0.20.04.1
 -- PHP Version: 7.4.3
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
@@ -61,7 +61,26 @@ INSERT INTO `Deck_instance` (`deckId`, `deckName`, `dateCreate`) VALUES
 (31, 'Dear', '2021-03-07 13:18:43'),
 (32, 'hello1115', '2021-03-07 16:15:27'),
 (33, 'test116', '2021-03-07 18:16:44'),
-(34, '119', '2021-03-07 18:19:51');
+(34, '119', '2021-03-07 18:19:51'),
+(35, 'Bung\r\n', '2021-03-14 11:30:03'),
+(36, 'Bob&Yui\r\n', '2021-03-14 18:48:26'),
+(37, 'unique1\r\n', '2021-03-14 18:51:25'),
+(38, 'fuckyouu\r\n', '2021-03-14 19:17:59'),
+(39, 'HelloTesting', '2021-03-19 17:20:58'),
+(40, 'elloTestinginging', '2021-03-19 17:23:20'),
+(41, 'HelllloTesting', '2021-03-19 17:23:37'),
+(42, 'HelloSatang', '2021-03-19 17:29:48'),
+(43, 'HelloTestingZaZa\r\n', '2021-03-20 06:29:55'),
+(44, 'TestingzaMakWow\r\n', '2021-03-20 06:32:38'),
+(45, 'sdsoclgf\r\n', '2021-03-20 06:34:36'),
+(46, 'test test', '2021-03-21 08:28:18'),
+(47, 'ttttt', '2021-03-21 08:32:37'),
+(48, 'GGGGGG', '2021-03-21 08:34:14'),
+(49, 'helloFromDear\r\n', '2021-03-21 16:19:09'),
+(50, 'Test345', '2021-03-21 18:00:32'),
+(51, 'TestingOishi', '2021-03-21 22:34:30'),
+(52, 'Animals', '2021-03-22 03:35:59'),
+(53, 'Animals3', '2021-03-22 03:56:36');
 
 -- --------------------------------------------------------
 
@@ -123,7 +142,24 @@ INSERT INTO `Flashcard_instance` (`flashcardId`, `deckId`, `term`, `definition`,
 (42, 33, 'Test2', 'Answer2', 2),
 (43, 34, 'Test1', 'Test11', 2),
 (44, 34, 'Test2', 'Test22', 2),
-(45, 34, 'Test3', 'Test33', 2);
+(45, 34, 'Test3', 'Test33', 2),
+(46, 45, 'Hellooo', 'World', NULL),
+(47, 45, 'cgddf', 'didginb', NULL),
+(48, 45, 'Snake Brand', 'Cool ju', NULL),
+(49, 48, 'test', 'def1', NULL),
+(50, 48, 'test2', 'def2', NULL),
+(51, 49, 'term1', 'Def1', NULL),
+(52, 49, 'google1', 'yahoo1', NULL),
+(53, 50, 'test1', 'yes', NULL),
+(54, 51, 'Hello', 'World', NULL),
+(55, 51, 'Cool', 'Product', NULL),
+(56, 51, 'Boss', 'Za', NULL),
+(57, 52, 'Dog', 'Four legs can bark', NULL),
+(58, 52, 'Cat', 'Four legs love to sleep', NULL),
+(59, 52, 'Human', '2 legs, intelligent creatures[D[D[D[D[', NULL),
+(60, 53, 'Dog', '4 Legs, Bark', NULL),
+(61, 53, 'Cat', '4 Legs, Meaow', NULL),
+(62, 53, 'Human', 'Smartest animal, 2 legs', NULL);
 
 -- --------------------------------------------------------
 
@@ -184,13 +220,13 @@ ALTER TABLE `User`
 -- AUTO_INCREMENT for table `Deck_instance`
 --
 ALTER TABLE `Deck_instance`
-  MODIFY `deckId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=35;
+  MODIFY `deckId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=54;
 
 --
 -- AUTO_INCREMENT for table `Flashcard_instance`
 --
 ALTER TABLE `Flashcard_instance`
-  MODIFY `flashcardId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=46;
+  MODIFY `flashcardId` int NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=63;
 
 --
 -- AUTO_INCREMENT for table `User`
@@ -352,6 +388,13 @@ CREATE TABLE `pma__recent` (
   `tables` text COLLATE utf8_bin NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin COMMENT='Recently accessed tables';
 
+--
+-- Dumping data for table `pma__recent`
+--
+
+INSERT INTO `pma__recent` (`username`, `tables`) VALUES
+('admin', '[{\"db\":\"learninghub\",\"table\":\"Flashcard_instance\"},{\"db\":\"learninghub\",\"table\":\"User\"},{\"db\":\"learninghub\",\"table\":\"Deck_instance\"}]');
+
 -- --------------------------------------------------------
 
 --
@@ -457,7 +500,7 @@ CREATE TABLE `pma__userconfig` (
 --
 
 INSERT INTO `pma__userconfig` (`username`, `timevalue`, `config_data`) VALUES
-('admin', '2021-03-07 18:21:27', '{\"Console\\/Mode\":\"collapse\"}');
+('admin', '2021-03-28 09:07:00', '{\"Console\\/Mode\":\"collapse\"}');
 
 -- --------------------------------------------------------
 
@@ -645,28 +688,6 @@ ALTER TABLE `pma__pdf_pages`
 --
 ALTER TABLE `pma__savedsearches`
   MODIFY `id` int UNSIGNED NOT NULL AUTO_INCREMENT;
---
--- Database: `test`
---
-CREATE DATABASE IF NOT EXISTS `test` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-USE `test`;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `users`
---
-
-CREATE TABLE `users` (
-  `Name` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
---
--- Dumping data for table `users`
---
-
-INSERT INTO `users` (`Name`) VALUES
-('BUNGZA');
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
