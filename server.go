@@ -114,18 +114,11 @@ func (s *server) nick(c *client, nick string) {
 
 func (s *server) croom(c *client, roomName string) {
 
-	//c.msg(fmt.Sprint(roomName))
-	// if len(roomName) == 0 {
-	// 	c.msg(fmt.Sprintf("Invalid syntax"))
-	// }
-
 	c.msg(fmt.Sprintf("croom %s", roomName))
 	r, ok := s.rooms[roomName]
 
 	if !ok {
 
-		//c.msg(fmt.Sprintf("Select Your Flashcard..."))
-		// Put Select Flashcard Function From Boss Here
 		ip := c.conn.RemoteAddr().String()
 		r = &room{
 			name:    roomName,
@@ -147,8 +140,6 @@ func (s *server) croom(c *client, roomName string) {
 
 	s.quitCurrentRoom(c)
 	c.room = r
-
-	// r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
 
 	c.msg(fmt.Sprintf("welcome to %s", roomName))
 	c.msg(fmt.Sprintf("if you want to play the game type ready"))
@@ -259,7 +250,6 @@ func createfc(c *client, listFC []Flashcard) {
 		INSERT INTO Flashcard_instance(deckId,term,definition)
 		VALUES(?,?,?)`
 	for _, item := range listFC {
-		// c.msg(fmt.Sprintf("%d, %s, %s\n", item.deckID, item.term, item.definition))
 		_, err := sqliteHandler.Conn.Exec(sqlStatement, item.deckID, item.term, item.definition)
 		if err != nil {
 			return
@@ -304,8 +294,6 @@ func (s *server) cuser(c *client) {
 }
 
 func (s *server) setroomdeck(c *client, deckid string) {
-	// set room.deckid
-	// var err struct{ c int }
 	if c.conn.RemoteAddr().String() == c.room.host {
 		deck_id, err := strconv.Atoi(deckid)
 		if err != nil {
