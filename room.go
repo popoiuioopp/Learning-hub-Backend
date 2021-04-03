@@ -76,7 +76,7 @@ func (r *room) GenQuestion(sender *client) {
 		time.Sleep(5 * time.Second)
 	}
 
-	var name []string
+	var name []*client
 	maximum := -1
 	////////check score///////
 	for _, m := range r.members {
@@ -85,9 +85,9 @@ func (r *room) GenQuestion(sender *client) {
 			if m.score > maximum {
 				maximum = m.score
 				name = nil
-				name = append(name, m.conn.RemoteAddr().String())
+				name = append(name, m)
 			} else {
-				name = append(name, m.conn.RemoteAddr().String())
+				name = append(name, m)
 			}
 		}
 	}
@@ -95,7 +95,7 @@ func (r *room) GenQuestion(sender *client) {
 	for _, m := range r.members {
 		m.msg(fmt.Sprintf("Winner:"))
 		for _, winner := range name {
-			m.msg(fmt.Sprintf("%s", winner))
+			m.msg(fmt.Sprintf("%s(%s)", winner.nick, winner.conn.RemoteAddr().String()))
 		}
 		m.msg(fmt.Sprintf("Score:\n%d point(s)", maximum))
 	}
