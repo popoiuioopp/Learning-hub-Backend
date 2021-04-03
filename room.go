@@ -73,7 +73,7 @@ func (r *room) GenQuestion(sender *client) {
 				m.msg(fmt.Sprintf("%s\n", fc.Definition))
 			}
 		}
-		time.Sleep(5 * time.Second)
+		time.Sleep(10 * time.Second)
 	}
 
 	var name []string
@@ -93,11 +93,11 @@ func (r *room) GenQuestion(sender *client) {
 	}
 
 	for _, m := range r.members {
-		m.msg(fmt.Sprintf("Winner:"))
+		m.msg(fmt.Sprintf("Winner is:"))
 		for _, winner := range name {
 			m.msg(fmt.Sprintf("%s", winner))
 		}
-		m.msg(fmt.Sprintf("Score:\n%d point(s)", maximum))
+		m.msg(fmt.Sprintf("Score of the winner is :\n%d point(s)", maximum))
 	}
 
 	for _, m := range r.members {
