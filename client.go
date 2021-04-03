@@ -89,16 +89,20 @@ func (c *client) readInput() {
 			case "/rstatus":
 				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n", c.room.status, c.room.deck.deckID, c.room.host))
 			case "/ready":
-				if c.room.host == c.conn.RemoteAddr().String() {
-					if c.room.deck.deckID == 0 {
-						c.msg(fmt.Sprintf("Please Specify Your Deck First"))
+				if c.room != nil {
+					if c.room.host == c.conn.RemoteAddr().String() {
+						if c.room.deck.deckID == 0 {
+							c.msg(fmt.Sprintf("Please Specify Your Deck First"))
+						} else {
+							c.status = "broadcast"
+						}
 					} else {
-						c.status = "broadcast"
+						c.status = "3"
 					}
+					c.room.Changeroomstatus(c)
 				} else {
-					c.status = "3"
+					c.msg(fmt.Sprintf("Please Select Room first"))
 				}
-				c.room.Changeroomstatus(c)
 			case "/srd":
 				c.commands <- command{
 					id:     CMD_SRD,
