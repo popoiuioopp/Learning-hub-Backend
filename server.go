@@ -132,7 +132,7 @@ func (s *server) nick(c *client, nick string) {
 	}
 
 	c.nick = nick
-	c.msg(fmt.Sprintf("all right, We will call you %s", nick))
+	c.msg(fmt.Sprintf("All right, We will call you %s", nick))
 }
 
 func (s *server) croom(c *client, roomName string) {
@@ -146,9 +146,6 @@ func (s *server) croom(c *client, roomName string) {
 	r, ok := s.rooms[roomName]
 
 	if !ok {
-
-		//c.msg(fmt.Sprintf("Select Your Flashcard..."))
-		// Put Select Flashcard Function From Boss Here
 		ip := c.conn.RemoteAddr().String()
 		r = &room{
 			name:    roomName,
@@ -171,10 +168,7 @@ func (s *server) croom(c *client, roomName string) {
 	s.quitCurrentRoom(c)
 	c.room = r
 
-	// r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
-
-	c.msg(fmt.Sprintf("welcome to %s", roomName))
-	c.msg(fmt.Sprintf("if you want to play the game type ready"))
+	c.msg(fmt.Sprintf("welcome to %s\nIf you want to play the game type /ready", roomName))
 }
 
 func (s *server) join(c *client, roomName string) {
@@ -191,8 +185,8 @@ func (s *server) join(c *client, roomName string) {
 
 		r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
 
-		c.msg(fmt.Sprintf("welcome to %s", roomName))
-		c.msg(fmt.Sprintf("if you want to play the game type ready"))
+		c.msg(fmt.Sprintf("welcome to %s\nIf you want to play the game type /ready", roomName))
+
 	} else {
 		c.msg(fmt.Sprintf("game already start"))
 	}
@@ -311,8 +305,8 @@ func (s *server) listRooms(c *client) {
 	for name := range s.rooms {
 		rooms = append(rooms, name)
 	}
-	c.msg(fmt.Sprintf("There are currently %d rooms", len(rooms)))
-	c.msg(fmt.Sprintf("available rooms: %s", strings.Join(rooms, ", ")))
+	c.msg(fmt.Sprintf("There are currently %d rooms\navailable rooms: %s", len(rooms),
+		strings.Join(rooms, ", ")))
 
 }
 
@@ -382,7 +376,6 @@ func (s *server) setroomdeck(c *client, deckid string) {
 				return
 			}
 			redisHandler.Client.Set(fmt.Sprintf("%d", c.room.deck.DeckID), string(jsonData), 0)
-			// fmt.Print(string(jsonData))
 			jsonData = nil
 		} else {
 			b := []byte(unmar)
