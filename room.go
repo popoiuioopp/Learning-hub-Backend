@@ -46,18 +46,6 @@ func (r *room) Changeroomstatus(sender *client) {
 	return
 }
 
-// func (r *room) CheckAnswer(sender *client, answer chan string) {
-// 	for {
-// 		select {
-// 		case text := <-answer:
-// 			fmt.Println(text)
-// 		case <-time.After(3 * time.Second):
-// 			fmt.Println("quit")
-// 			return
-// 		}
-// 	}
-// }
-
 func (r *room) GenQuestion(sender *client) {
 
 	for !r.status {

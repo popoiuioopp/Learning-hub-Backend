@@ -70,8 +70,6 @@ func (s *server) run() {
 			s.quit(cmd.client)
 		case CMD_CROOM:
 			s.croom(cmd.client, cmd.args[1])
-		// case CMD_CREATEFC:
-		// 	s.createfc(cmd.client, cmd.args[1], cmd.args[2])
 		case CMD_CUSER:
 			s.cuser(cmd.client)
 		case CMD_SRD:
@@ -99,7 +97,7 @@ func (s *server) newClient(conn net.Conn) {
 
 func NewDBConn() {
 	fmt.Println("Connecting to database...")
-	db, err := sql.Open("mysql", "learninghub:FgTQTzNM62cC63K@tcp(10.104.0.6:3306)/learninghub")
+	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(165.232.170.11:3306)/learninghub")
 	if err != nil {
 		fmt.Print(err)
 		panic(err)
@@ -114,7 +112,7 @@ func NewRedisConn() {
 	fmt.Println("Connecting to Redis....")
 	redisClient := redis.NewClient(&redis.Options{
 		Network:  "tcp",
-		Addr:     "10.104.0.6:6379",
+		Addr:     "165.232.170.11:6379",
 		Password: "", // no password
 		DB:       0,  // default DB
 	})
@@ -140,12 +138,6 @@ func (s *server) nick(c *client, nick string) {
 
 func (s *server) croom(c *client, roomName string) {
 
-	//c.msg(fmt.Sprint(roomName))
-	// if len(roomName) == 0 {
-	// 	c.msg(fmt.Sprintf("Invalid syntax"))
-	// }
-
-	c.msg(fmt.Sprintf("croom %s", roomName))
 	r, ok := s.rooms[roomName]
 
 	if !ok {
@@ -177,17 +169,15 @@ func (s *server) croom(c *client, roomName string) {
 func (s *server) join(c *client, roomName string) {
 	r, ok := s.rooms[roomName]
 	if !ok {
-		c.msg(fmt.Sprintf("Room is not available!"))
+		s.croom(c, roomName)
 		return
 	}
 	if r.status == false {
 		r.members[c.conn.RemoteAddr()] = c
-
 		s.quitCurrentRoom(c)
 		c.room = r
-
+		c.nick = fmt.Sprintf("%s%d", "Player " , len(c.room.members))
 		r.broadcast(c, fmt.Sprintf("%s joined the room", c.nick))
-
 		c.msg(fmt.Sprintf("welcome to %s\nIf you want to play the game type /ready", roomName))
 
 	} else {

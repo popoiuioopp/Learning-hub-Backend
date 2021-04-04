@@ -21,7 +21,21 @@ type client struct {
 	no_ques  int
 }
 
+
 func (c *client) readInput() {
+
+	// read room from user
+	roomname, _ := bufio.NewReader(c.conn).ReadString('\n')
+	arr := []string {" ", roomname}
+
+	c.commands <- command{
+		id:     CMD_JOIN,
+		client: c,
+		args:   arr,
+	}
+
+	//c.msg(fmt.Sprintf("Client Status: ", c.status))
+
 	for {
 
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
@@ -48,10 +62,14 @@ func (c *client) readInput() {
 					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/join":
-				c.commands <- command{
-					id:     CMD_JOIN,
-					client: c,
-					args:   args,
+				if len(args) == 2 {
+					c.commands <- command{
+						id:     CMD_JOIN,
+						client: c,
+						args:   args,
+					}
+				} else {
+					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/rooms":
 				c.commands <- command{
@@ -129,6 +147,10 @@ func (c *client) readInput() {
 				fmt.Println(err)
 				return
 			}
+
+			// check error
+			c.msg(fmt.Sprintf("hello"))
+
 			c.msg(fmt.Sprintf("You deck ID is %d", deckid))
 			var fcList []Flashcard
 
@@ -136,7 +158,7 @@ func (c *client) readInput() {
 				c.msg(fmt.Sprintf("write your words then space bar and || with definiton \nGive Your Word (format: Term || Definition) or Exit (cmd: /done): "))
 				msg, err := bufio.NewReader(c.conn).ReadString('\n')
 				if err != nil {
-					c.msg(fmt.Sprintf(msg))
+					fmt.Println(err)
 					return
 				}
 
