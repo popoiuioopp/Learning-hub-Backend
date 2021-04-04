@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net"
+	"fmt"
 )
 
 func main() {
@@ -11,14 +12,14 @@ func main() {
 	NewRedisConn()
 	defer sqliteHandler.Conn.Close()
 	go s.run()
-
-	listener, err := net.Listen("tcp", ":8888")
+	port := "33125"
+	listener, err := net.Listen("tcp", fmt.Sprintf(":"+port))
 	if err != nil {
 		log.Fatalf("unable to start server: %s", err.Error())
 	}
 
 	defer listener.Close()
-	log.Printf("server started on :8888")
+	log.Printf(fmt.Sprintf("server started on :"+ port))
 
 	for {
 		conn, err := listener.Accept()
