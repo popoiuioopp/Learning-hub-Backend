@@ -1,13 +1,14 @@
 package main
 
 import (
-	"flag"
 	"bufio"
+	"flag"
 	"io"
 	"log"
 	"net"
+	"fmt"
+	//"strconv"
 	"strings"
-	"strconv"
 )
 
 type Backends struct {
@@ -19,17 +20,25 @@ func (b *Backends) Choose(idx int) string {
 	// idx := b.n % len(b.servers)
 	// b.n++
 	// log.Printf("selected server idx: %d", idx-1)
-	return b.servers[idx-1]
+	return b.servers[idx]
 }
 
 func (b *Backends) String() string {
 	return strings.Join(b.servers, ", ")
 }
 
+func (b *Backends) HashRoom(name string) int {
+	ascii := 0
+	rune := []rune(name)
+	for i := range rune {
+		ascii += int(rune[i])
+	}
+	return ascii % len(b.servers)
+}
+   
 var (
-	bind     = flag.String("bind",":5000","The address to bind on")
-	//balance  = flag.String("balance", "lobby1:33125", "The backend servers to balance connections across, separated by commas")
-	balance  = flag.String("balance", "lobby1:33125,lobby2:32126,lobby3:31127", "The backend servers to balance connections across, separated by commas")
+	bind = flag.String("bind", ":5000", "The address to bind on")
+	balance  = flag.String("balance", "10.104.0.10:33125,10.104.0.3:33125,10.104.0.8:33125", "The backend servers to balance connections across, separated by commas")
 	backends *Backends
 )
 
@@ -44,9 +53,8 @@ func init() {
 	if len(servers) == 1 && servers[0] == "" {
 		log.Fatalln("please specify backend servers with -backends")
 	}
-	
-	backends = &Backends{servers: servers}
 
+	backends = &Backends{servers: servers}
 }
 
 func copy(wc io.WriteCloser, r io.Reader) {
@@ -56,20 +64,27 @@ func copy(wc io.WriteCloser, r io.Reader) {
 
 func handleConnection(userSide net.Conn) {
 
-	userSide.Write([]byte("> Please Select Server\n"))
-	serverId, err := bufio.NewReader(userSide).ReadString('\n')
-	serverId = strings.TrimSuffix(serverId, "\r\n") // remove '\r\n'
-	idx, err := strconv.Atoi(serverId)
-	log.Printf("serverId: %s", serverId)
-	log.Printf("error: %s", err)
-	server := backends.Choose(idx)
+	userSide.Write([]byte("> Please Select Your Room Name\n"))
+	roomName, _ := bufio.NewReader(userSide).ReadString('\n')
+	roomName = strings.TrimSuffix(roomName, "\r\n") // remove '\r\n'
+	//log.Printf("room name: %s", roomName)
+	idx := backends.HashRoom(roomName)
+	//log.Printf("serverId: %d", idx)
 
+	server := backends.Choose(idx)
 	backendSide, err := net.Dial("tcp", server)
+
 	if err != nil {
 		userSide.Close()
 		log.Printf("failed to dial %s: %s", server, err)
 		return
 	}
+
+	// send roomname to server to create the room from the given name
+	reader := bufio.NewReader(strings.NewReader(roomName))
+	text, _ := reader.ReadString('\n')
+	// send text to socket
+	fmt.Fprint(backendSide, text+"\n")
 
 	go copy(backendSide, userSide)
 	go copy(userSide, backendSide)
