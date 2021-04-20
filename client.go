@@ -33,12 +33,15 @@ func (c *client) readInput() {
 		c.msg(fmt.Sprint(msg))
 
 		if c.status == "0" {
+			// c.msg(fmt.Sprint("----Ready for your command----"))
+			// ip := c.conn.RemoteAddr().String()
+			// c.msg(fmt.Sprintf("Test Print %s", ip))
 			args := strings.Split(msg, " ")
 			cmd := strings.TrimSpace(args[0])
 
 			switch cmd {
 			case "/nick":
-				if len(args) != 1 {
+				if len(args) == 2 {
 					c.commands <- command{
 						id:     CMD_NICK,
 						client: c,
@@ -90,27 +93,25 @@ func (c *client) readInput() {
 				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n",
 					c.room.status, c.room.deck.DeckID, c.room.host))
 			case "/ready":
-				if c.room != nil {
-
-					if c.room.host == c.conn.RemoteAddr().String() {
-						if c.room.deck.DeckID == 0 {
-							c.msg(fmt.Sprintf("Please Specify Your Deck First"))
-						} else {
-							c.status = "broadcast"
-						}
+				if c.room.host == c.conn.RemoteAddr().String() {
+					if c.room.deck.DeckID == 0 {
+						c.msg(fmt.Sprintf("Please Specify Your Deck First"))
 					} else {
-						c.status = "3"
+						c.status = "broadcast"
 					}
-					c.room.Changeroomstatus(c)
 				} else {
-					c.msg(fmt.Sprintf("Please Select Room first"))
+					c.status = "3"
 				}
-
+				c.room.Changeroomstatus(c)
 			case "/srd":
-				c.commands <- command{
-					id:     CMD_SRD,
-					client: c,
-					args:   args,
+				if len(args) == 2 {
+					c.commands <- command{
+						id:     CMD_SRD,
+						client: c,
+						args:   args,
+					}
+				} else {
+					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/cuser":
 				c.msg(fmt.Sprintf("current user: "))
@@ -133,7 +134,8 @@ func (c *client) readInput() {
 			var fcList []Flashcard
 
 			for c.status == "1" {
-				c.msg(fmt.Sprintf("write your words then space bar and || with definiton \nGive Your Word (format: Term || Definition) or Exit (cmd: /done): "))
+				c.msg(fmt.Sprintf("write your words then space bar and || with definiton "))
+				c.msg(fmt.Sprintf("Give Your Word (format: Term || Definition) or Exit (cmd: /done): "))
 				msg, err := bufio.NewReader(c.conn).ReadString('\n')
 				if err != nil {
 					c.msg(fmt.Sprintf(msg))
@@ -149,7 +151,8 @@ func (c *client) readInput() {
 						c.status = "0"
 						createfc(c, fcList)
 						fcList = nil
-						c.msg(fmt.Sprintf("You are in lobby now\nDone creating flashcard"))
+						c.msg(fmt.Sprintf("You are in lobby now"))
+						c.msg(fmt.Sprintf("Done creating flashcard"))
 						break
 					default:
 						c.msg(fmt.Sprintf("Invalid inputs"))
@@ -233,7 +236,8 @@ func (c *client) readInput() {
 					}
 
 				} else {
-					c.msg(fmt.Sprintf("Game finish!!!\nWait others to finish..."))
+					c.msg(fmt.Sprintf("Game finish!!!"))
+					c.msg(fmt.Sprintf("Wait others to finish..."))
 				}
 
 			} else {

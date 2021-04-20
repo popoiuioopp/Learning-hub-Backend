@@ -44,6 +44,7 @@ type Deck struct {
 
 var sqliteHandler SQLHandler
 var redisHandler RedisClient
+var redisServerHandler RedisClient
 
 var mutex = &sync.Mutex{}
 
@@ -70,8 +71,6 @@ func (s *server) run() {
 			s.quit(cmd.client)
 		case CMD_CROOM:
 			s.croom(cmd.client, cmd.args[1])
-		// case CMD_CREATEFC:
-		// 	s.createfc(cmd.client, cmd.args[1], cmd.args[2])
 		case CMD_CUSER:
 			s.cuser(cmd.client)
 		case CMD_SRD:
@@ -99,10 +98,10 @@ func (s *server) newClient(conn net.Conn) {
 
 func NewDBConn() {
 	fmt.Println("Connecting to database...")
-	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(165.232.170.11:3306)/learninghub")
+	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(10.104.0.6:3306)/learninghub")
 	if err != nil {
 		fmt.Print(err)
-		panic(err)
+		return
 	}
 
 	fmt.Println("Connected to database")
@@ -111,10 +110,10 @@ func NewDBConn() {
 
 //NewClient will create new Redis client
 func NewRedisConn() {
-	fmt.Println("Connecting to Redis....")
+	fmt.Println("Connecting to database side's Redis....")
 	redisClient := redis.NewClient(&redis.Options{
 		Network:  "tcp",
-		Addr:     "165.232.170.11:6379",
+		Addr:     "10.104.0.6:6379",
 		Password: "", // no password
 		DB:       0,  // default DB
 	})
@@ -125,6 +124,24 @@ func NewRedisConn() {
 	} else {
 		fmt.Println("Connected to Redis")
 		redisHandler.Client.FlushAll().Result()
+	}
+}
+
+func NewRedisConnServer() {
+	fmt.Println("Connecting to server's side's Redis....")
+	redisClient := redis.NewClient(&redis.Options{
+		Network:  "tcp",
+		Addr:     "redis:6379",
+		Password: "", // no password
+		DB:       0,  // default DB
+	})
+	redisServerHandler.Client = redisClient
+	_, err := redisServerHandler.Client.Ping().Result()
+	if err != nil {
+		panic(err)
+	} else {
+		fmt.Println("Connected to Redis")
+		redisServerHandler.Client.FlushAll().Result()
 	}
 }
 
@@ -297,7 +314,6 @@ func createfc(c *client, listFC []Flashcard) {
 		INSERT INTO Flashcard_instance(deckId,term,definition)
 		VALUES(?,?,?)`
 	for _, item := range listFC {
-		// c.msg(fmt.Sprintf("%d, %s, %s\n", item.deckID, item.term, item.definition))
 		_, err := sqliteHandler.Conn.Exec(sqlStatement, item.DeckID, item.Term, item.Definition)
 		if err != nil {
 			return
@@ -351,46 +367,62 @@ func (s *server) setroomdeck(c *client, deckid string) {
 			if err != nil {
 				c.msg(fmt.Sprintf("%s\n", err))
 			}
-			unmar, err := redisHandler.Client.Get(deckid).Result()
+			unmarServer, err := redisServerHandler.Client.Get(deckid).Result()
 			if err == redis.Nil {
-				// deckStructRedis, err := redisHandler.Client.Get(deckid).Result()
-				sqlStatement := `select Deck_instance.deckName, Deck_instance.deckId, 
-		Flashcard_instance.flashcardID, Flashcard_instance.Term, 
-		Flashcard_instance.definition from Flashcard_instance 
-		inner join Deck_instance
-		on Flashcard_instance.deckId = Deck_instance.deckId
-		where Deck_instance.deckId = ?; `
-				rows, err := sqliteHandler.Conn.Query(sqlStatement, deck_id)
-				if err != nil {
-					return
-				}
-				var fcArray []Flashcard
-				for rows.Next() {
-					var tempFC Flashcard
-					tempFC.DeckID = deck_id
-					err := rows.Scan(&c.room.deck.DeckName, &c.room.deck.DeckID,
-						&tempFC.FcID, &tempFC.Term, &tempFC.Definition)
-					fcArray = append(fcArray, tempFC)
+				log.Printf("Can not find deck:%s in server's redis\n", deckid)
+				unmar, err := redisHandler.Client.Get(deckid).Result()
+				if err == redis.Nil {
+					log.Printf("Can not find deck:%s in database's redis\nPulling deck:%s from database...", deckid, deckid)
+					sqlStatement := `select Deck_instance.deckName, Deck_instance.deckId, 
+						Flashcard_instance.flashcardID, Flashcard_instance.Term, 
+						Flashcard_instance.definition from Flashcard_instance 
+						inner join Deck_instance
+						on Flashcard_instance.deckId = Deck_instance.deckId
+						where Deck_instance.deckId = ?; `
+					rows, err := sqliteHandler.Conn.Query(sqlStatement, deck_id)
 					if err != nil {
 						return
 					}
-				}
-				c.room.deck.FcArray = &fcArray
+					var fcArray []Flashcard
+					for rows.Next() {
+						var tempFC Flashcard
+						tempFC.DeckID = deck_id
+						err := rows.Scan(&c.room.deck.DeckName, &c.room.deck.DeckID,
+							&tempFC.FcID, &tempFC.Term, &tempFC.Definition)
+						fcArray = append(fcArray, tempFC)
+						if err != nil {
+							return
+						}
+					}
+					c.room.deck.FcArray = &fcArray
 
-				if len(*c.room.deck.FcArray) == 0 {
-					c.msg(fmt.Sprintf("This deck is empty! Please use other deck!"))
-					return
-				}
+					if len(*c.room.deck.FcArray) == 0 {
+						c.msg(fmt.Sprintf("This deck is empty! Please use other deck!"))
+						return
+					}
 
-				var jsonData []byte
-				jsonData, err = json.Marshal(c.room.deck)
-				if err != nil {
-					return
+					var jsonData []byte
+					jsonData, err = json.Marshal(c.room.deck)
+					if err != nil {
+						return
+					}
+					valueSet := fmt.Sprintf("%d", c.room.deck.DeckID)
+					redisHandler.Client.Set(valueSet, string(jsonData), 0)
+					redisServerHandler.Client.Set(valueSet, string(jsonData), 0)
+					jsonData = nil
+				} else {
+					log.Printf("Pulling deck:%s from databases's redis\n", deckid)
+					b := []byte(unmar)
+					deck := &Deck{}
+					err = json.Unmarshal(b, deck)
+					if err != nil {
+						return
+					}
+					c.room.deck = *deck
 				}
-				redisHandler.Client.Set(fmt.Sprintf("%d", c.room.deck.DeckID), string(jsonData), 0)
-				jsonData = nil
 			} else {
-				b := []byte(unmar)
+				log.Printf("Pulling deck:%s from server's redis\n", deckid)
+				b := []byte(unmarServer)
 				deck := &Deck{}
 				err = json.Unmarshal(b, deck)
 				if err != nil {
