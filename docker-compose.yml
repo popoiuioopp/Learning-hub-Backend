@@ -5,93 +5,62 @@ version: '3'
 # Define services
 services:
 
-  lbserver:
-    # Configuration for building the docker image for the service
+  gameserver:
     build:
-      context: ./lbserver # Use an image built from the specified dockerfile in the current directory.
+      context: ./gameserver
       dockerfile: Dockerfile
-    container_name: lbserver
-    restart: unless-stopped
-    ports:
-      - "5000:5000" # Forward the exposed port 5000 on the container to port 5000 on the host machine
-    depends_on:
-      - lobby1  # This service depends on lobby1. Start that first.
-      - lobby2 # This service depends on lobby2. Start that first.
-      - lobby3 # This service depends on lobby3. Start that first.
-      - mysql # This service depends on mysql. Start that first.
-      - redis # This service depends on redis. Start that first.
-    environment: # Pass environment variables to the service
-      REDIS_URL: redis:6379
-    networks: # Networks to join (Services on the same network can communicate with each other using their name)
-      - backend
-
-  lobby1:
-    build:
-      context: ./lobby1
-      dockerfile: Dockerfile
-    container_name: lobby1
+    container_name: gameserver
     restart: unless-stopped
     ports:
       - "33125:33125"
+    environment:
+      - PORT=33125
     depends_on: 
-      - redis 
-      - mysql
+      - redis
     networks:
       - backend
   
-  lobby2:
+  gameserver2:
     build:
-      context: ./lobby2
+      context: ./gameserver
       dockerfile: Dockerfile
-    container_name: lobby2
+    container_name: gameserver3
     restart: unless-stopped
     ports:
-      - "32126:32126"
+      - "33126:33126"
+    environment:
+      - PORT=33126
     depends_on: 
-      - redis 
-      - mysql
-    networks:
-      - backend
-  
-  lobby3:
-    build:
-      context: ./lobby3
-      dockerfile: Dockerfile
-    container_name: lobby3
-    restart: unless-stopped
-    ports:
-      - "31127:31127"
-    depends_on: 
-      - redis 
-      - mysql
+      - redis
     networks:
       - backend
 
-  # MySQL Service
-  mysql:
-    image: mysql
-    container_name: mysql
-    volumes:
-      - container-volume:/var/lib/mysql
-      - ./mysql/mysqldump.sql:/docker-entrypoint-initdb.d/mysqldump.sql
-    environment:
-      MYSQL_ROOT_PASSWORD: FgTQTzNM62cC63K
-      MYSQL_DATABASE: learninghub
-    restart: always
+  gameserver3:
+    build:
+      context: ./gameserver
+      dockerfile: Dockerfile
+    container_name: gameserver2
+    restart: unless-stopped
     ports:
-      - "3306:3306"
+      - "33127:33127"
+    environment:
+      - PORT=33127
+    depends_on: 
+      - redis
     networks:
       - backend
-    cap_add:
-      - SYS_NICE
 
   # Redis Service
   redis:
     image: "redis:alpine" 
     container_name: redis
     restart: unless-stopped
-    ports: 
-      - "6379:6379"
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+    expose: 
+      - "6379"
+    # ports: 
+    #   - "6379:6379"
     networks:
       - backend
 

@@ -73,10 +73,8 @@ func (r *room) GenQuestion(sender *client) {
 			if m.score > maximum {
 				maximum = m.score
 				name = nil
-				name = append(name, m.conn.RemoteAddr().String())
-			} else {
-				name = append(name, m.conn.RemoteAddr().String())
 			}
+			name = append(name, m.nick)
 		}
 	}
 
@@ -97,3 +95,4 @@ func (r *room) GenQuestion(sender *client) {
 	r.status = false
 	r.deck.DeckID = 0
 }
+

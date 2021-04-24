@@ -22,6 +22,17 @@ type client struct {
 }
 
 func (c *client) readInput() {
+
+	// read room from user
+	roomname, _ := bufio.NewReader(c.conn).ReadString('\n')
+	arr := []string{" ", roomname}
+
+	c.commands <- command{
+		id:     CMD_JOIN,
+		client: c,
+		args:   arr,
+	}
+
 	for {
 
 		msg, err := bufio.NewReader(c.conn).ReadString('\n')
@@ -41,7 +52,7 @@ func (c *client) readInput() {
 
 			switch cmd {
 			case "/nick":
-				if len(args) != 1 {
+				if len(args) == 2 {
 					c.commands <- command{
 						id:     CMD_NICK,
 						client: c,
@@ -51,10 +62,14 @@ func (c *client) readInput() {
 					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/join":
-				c.commands <- command{
-					id:     CMD_JOIN,
-					client: c,
-					args:   args,
+				if len(args) == 2 {
+					c.commands <- command{
+						id:     CMD_JOIN,
+						client: c,
+						args:   args,
+					}
+				} else {
+					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/rooms":
 				c.commands <- command{
@@ -104,10 +119,14 @@ func (c *client) readInput() {
 				}
 				c.room.Changeroomstatus(c)
 			case "/srd":
-				c.commands <- command{
-					id:     CMD_SRD,
-					client: c,
-					args:   args,
+				if len(args) == 2 {
+					c.commands <- command{
+						id:     CMD_SRD,
+						client: c,
+						args:   args,
+					}
+				} else {
+					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/cuser":
 				c.msg(fmt.Sprintf("current user: "))
@@ -256,3 +275,4 @@ func (c *client) err(err error) {
 func (c *client) msg(msg string) {
 	c.conn.Write([]byte("> " + msg + "\n"))
 }
+
