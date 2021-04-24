@@ -291,7 +291,7 @@ func checkDeckId(deckname string) (int, error) {
 	return checkid, nil
 }
 
-func createDeck(c *client, deckname string) bool {
+func old_createDeck(c *client, deckname string) bool {
 	mutex.Lock()
 	if checkDeckExist(deckname) == 0 {
 		sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
@@ -309,7 +309,18 @@ func createDeck(c *client, deckname string) bool {
 	}
 }
 
-func createfc(c *client, listFC []Flashcard) {
+func createDeck(c *client, deckname string) (bool, int) {
+	sqlStatement := `INSERT INTO Deck_instance(deckName, dateCreate) VALUES(?, NOW())`
+	res, err := sqliteHandler.Conn.Exec(sqlStatement, deckname)
+
+	if err != nil {
+		return false, 0
+	}
+	id, err := res.LastInsertId()
+	return true, int(id)
+}
+
+func old_createfc(c *client, listFC []Flashcard) {
 	sqlStatement := `
 		INSERT INTO Flashcard_instance(deckId,term,definition)
 		VALUES(?,?,?)`
@@ -319,6 +330,27 @@ func createfc(c *client, listFC []Flashcard) {
 			return
 		}
 	}
+}
+
+func createfc(c *client, listFC []Flashcard) {
+	sqlStatement := `
+		INSERT INTO Flashcard_instance(deckId,term,definition)
+		VALUES `
+	vals := []interface{}{}
+
+	for _, row := range listFC {
+		sqlStatement += "(?, ?, ?),"
+		vals = append(vals, row.DeckID, row.Term, row.Definition)
+	}
+
+	//trim the last ,
+	sqlStatement = strings.TrimSuffix(sqlStatement, ",")
+
+	//prepare the statement
+	stmt, _ := sqliteHandler.Conn.Prepare(sqlStatement)
+
+	//format all vals at once
+	stmt.Exec(vals...)
 }
 
 func (s *server) listRooms(c *client) {
@@ -447,4 +479,3 @@ func (s *server) setroomdeck(c *client, deckid string) {
 		return
 	}
 }
-

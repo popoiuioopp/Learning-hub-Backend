@@ -136,15 +136,16 @@ func (c *client) readInput() {
 		} else if c.status == "1" {
 
 			deckname := msg
-			if !createDeck(c, deckname) {
+			ok, deckid := createDeck(c, deckname)
+			if !ok {
 				c.status = "0"
 				c.msg(fmt.Sprintf("you are in the lobby now "))
 			}
-			deckid, err := checkDeckId(deckname)
-			if err != nil {
-				fmt.Println(err)
-				return
-			}
+			// deckid, err := checkDeckId(deckname)
+			// if err != nil {
+			// 	fmt.Println(err)
+			// 	return
+			// }
 			c.msg(fmt.Sprintf("You deck ID is %d", deckid))
 			var fcList []Flashcard
 
@@ -275,4 +276,3 @@ func (c *client) err(err error) {
 func (c *client) msg(msg string) {
 	c.conn.Write([]byte("> " + msg + "\n"))
 }
-
