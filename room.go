@@ -60,6 +60,12 @@ func (r *room) Changeroomstatus(sender *client) {
 
 func (r *room) GenQuestion(sender *client) {
 
+	for addr, m := range r.members {
+		if sender.conn.RemoteAddr() != addr {
+			m.msg(fmt.Sprintf("Game Start!"))
+		}
+	}
+
 	for !r.status {
 	}
 
