@@ -91,7 +91,7 @@ func (s *server) newClient(conn net.Conn) {
 
 func newDBConn() {
 	fmt.Println("Connecting to database...")
-	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(10.104.0.6:3306)/learninghub")
+	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(165.232.170.11:3306)/learninghub")
 	if err != nil {
 		fmt.Print(err)
 		return
@@ -188,6 +188,7 @@ func ListDecks(c *client) {
 		}
 		c.msg(fmt.Sprintf("%s : %s\n", deckID, deckName))
 	}
+	rows.Close()
 }
 
 ////////////Check that deck name is already existed or not////////////////////////////
@@ -204,6 +205,7 @@ func checkDeckExist(deckname string) int {
 			return 1
 		}
 	}
+	rows.Close()
 	return result
 }
 
@@ -226,6 +228,7 @@ func checkDeckId(deckname string) (int, error) {
 			return 0, err
 		}
 	}
+	rows.Close()
 	return checkid, nil
 }
 
@@ -320,6 +323,7 @@ func (s *server) setroomdeck(c *client, deckid string) {
 				return
 			}
 		}
+		rows.Close()
 		c.room.no_fc = len(fcArray)
 		c.room.deck.fcArray = &fcArray
 		c.msg(fmt.Sprintf("This room have these shit\nDeckID=%d\nDeckName=%s\n", c.room.deck.deckID, c.room.deck.deckName))
