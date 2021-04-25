@@ -51,6 +51,12 @@ func (r *room) GenQuestion(sender *client) {
 	for !r.status {
 	}
 
+	for addr, m := range r.members {
+		if sender.conn.RemoteAddr() != addr {
+			m.msg(fmt.Sprintf("Game Start!"))
+		}
+	}
+
 	for _, fc := range *r.deck.FcArray {
 		r.answer = fc.Term
 		r.currFC = fc
@@ -95,4 +101,3 @@ func (r *room) GenQuestion(sender *client) {
 	r.status = false
 	r.deck.DeckID = 0
 }
-
