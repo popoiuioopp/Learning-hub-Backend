@@ -38,7 +38,7 @@ func (c *client) readInput() {
 
 			switch cmd {
 			case "/nick":
-				if len(args) != 1 {
+				if len(args) == 2 {
 					c.commands <- command{
 						id:     CMD_NICK,
 						client: c,
@@ -48,10 +48,12 @@ func (c *client) readInput() {
 					c.msg(fmt.Sprintf("Invalid syntax"))
 				}
 			case "/join":
-				c.commands <- command{
-					id:     CMD_JOIN,
-					client: c,
-					args:   args,
+				if len(args) == 2 {
+					c.commands <- command{
+						id:     CMD_JOIN,
+						client: c,
+						args:   args,
+					}
 				}
 			case "/rooms":
 				c.commands <- command{
@@ -59,10 +61,14 @@ func (c *client) readInput() {
 					client: c,
 				}
 			case "/msg":
-				c.commands <- command{
-					id:     CMD_MSG,
-					client: c,
-					args:   args,
+				if c.room != nil {
+					c.commands <- command{
+						id:     CMD_MSG,
+						client: c,
+						args:   args,
+					}
+				} else {
+					c.msg(fmt.Sprintf("Please Select Room first"))
 				}
 			case "/quit":
 				c.commands <- command{
@@ -87,7 +93,12 @@ func (c *client) readInput() {
 				ListDecks(c)
 				c.msg(fmt.Sprintf("Pls Choose your deck by type in deck id"))
 			case "/rstatus":
-				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n", c.room.status, c.room.deck.deckID, c.room.host))
+				if c.room != nil {
+					c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n",
+						c.room.status, c.room.deck.deckID, c.room.host))
+				} else {
+					c.msg(fmt.Sprintf("Please Select Room first"))
+				}
 			case "/ready":
 				if c.room != nil {
 					if c.room.host == c.conn.RemoteAddr().String() {
@@ -104,10 +115,18 @@ func (c *client) readInput() {
 					c.msg(fmt.Sprintf("Please Select Room first"))
 				}
 			case "/srd":
-				c.commands <- command{
-					id:     CMD_SRD,
-					client: c,
-					args:   args,
+				if c.room != nil {
+					if len(args) == 2 {
+						c.commands <- command{
+							id:     CMD_SRD,
+							client: c,
+							args:   args,
+						}
+					} else {
+						c.msg(fmt.Sprintf("Invalid syntax"))
+					}
+				} else {
+					c.msg(fmt.Sprintf("Please Select Room first"))
 				}
 			case "/cuser":
 				c.msg(fmt.Sprintf("current user: "))
