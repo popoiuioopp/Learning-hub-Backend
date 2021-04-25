@@ -98,7 +98,7 @@ func (s *server) newClient(conn net.Conn) {
 
 func NewDBConn() {
 	fmt.Println("Connecting to database...")
-	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(165.232.170.11:3306)/learninghub")
+	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(10.104.0.6:3306)/learninghub")
 	if err != nil {
 		fmt.Print(err)
 		return
@@ -113,7 +113,7 @@ func NewRedisConn() {
 	fmt.Println("Connecting to database side's Redis....")
 	redisClient := redis.NewClient(&redis.Options{
 		Network:  "tcp",
-		Addr:     "165.232.170.11:6379",
+		Addr:     "10.104.0.6:6379",
 		Password: "", // no password
 		DB:       0,  // default DB
 	})
