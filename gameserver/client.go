@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net"
 	"strings"
 
@@ -194,37 +195,49 @@ func (c *client) readInput() {
 			deckid := msg
 			c.msg(fmt.Sprintf("Deckid: %s\n", deckid))
 
-			//query fc from db
-			unmar, err := redisHandler.Client.Get("deckid").Result()
+			unmarServer, err := redisServerHandler.Client.Get(deckid).Result()
 			if err == redis.Nil {
-				// query
-				statement := "SELECT term , definition FROM Flashcard_instance WHERE deckId = ?;"
-				rows, err := sqliteHandler.Conn.Query(statement, deckid)
-				if err != nil {
-					fmt.Print(err)
-				}
-
-				for rows.Next() {
-					var term string
-					var definition string
-					err = rows.Scan(&term, &definition)
+				log.Printf("Can not find deck:%s in server's redis\n", deckid)
+				unmar, err := redisHandler.Client.Get(deckid).Result()
+				if err == redis.Nil {
+					// query
+					statement := "SELECT term , definition FROM Flashcard_instance WHERE deckId = ?;"
+					rows, err := sqliteHandler.Conn.Query(statement, deckid)
 					if err != nil {
 						fmt.Print(err)
 					}
-					c.msg(fmt.Sprintf("%s : %s\n", term, definition))
-				}
 
-				rows.Close() //good habit to close
+					for rows.Next() {
+						var term string
+						var definition string
+						err = rows.Scan(&term, &definition)
+						if err != nil {
+							fmt.Print(err)
+						}
+						c.msg(fmt.Sprintf("%s : %s\n", term, definition))
+					}
+
+					rows.Close() //good habit to close
+				} else {
+					b := []byte(unmar)
+					deck := &Deck{}
+					err = json.Unmarshal(b, deck)
+					if err != nil {
+						return
+					}
+					for _, item := range *deck.FcArray {
+						c.msg(fmt.Sprintf("%s : %s\n", item.Term, item.Definition))
+					}
+				}
 			} else {
-				b := []byte(unmar)
+				log.Printf("Pulling deck:%s from server's redis\n", deckid)
+				b := []byte(unmarServer)
 				deck := &Deck{}
 				err = json.Unmarshal(b, deck)
 				if err != nil {
 					return
 				}
-				for _, item := range *deck.FcArray {
-					c.msg(fmt.Sprintf("%s : %s\n", item.Term, item.Definition))
-				}
+				c.room.deck = *deck
 			}
 
 			c.status = "0"
