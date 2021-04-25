@@ -91,7 +91,7 @@ func (s *server) newClient(conn net.Conn) {
 
 func newDBConn() {
 	fmt.Println("Connecting to database...")
-	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(165.232.170.11:3306)/learninghub")
+	db, err := sql.Open("mysql", "root:FgTQTzNM62cC63K@tcp(10.104.0.6:3306)/learninghub")
 	if err != nil {
 		fmt.Print(err)
 		return
