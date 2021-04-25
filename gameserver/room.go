@@ -67,7 +67,7 @@ func (r *room) GenQuestion(sender *client) {
 				m.msg(fmt.Sprintf("%s\n", fc.Definition))
 			}
 		}
-		time.Sleep(10 * time.Second)
+		time.Sleep(5 * time.Second)
 	}
 
 	var name []string

@@ -106,8 +106,12 @@ func (c *client) readInput() {
 				ListDecks(c)
 				c.msg(fmt.Sprintf("Pls Choose your deck by type in deck id"))
 			case "/rstatus":
-				c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n",
-					c.room.status, c.room.deck.DeckID, c.room.host))
+				if c.room != nil {
+					c.msg(fmt.Sprintf("room status: %t ,current deckid:%d,current host_id:%s\n",
+						c.room.status, c.room.deck.DeckID, c.room.host))
+				} else {
+					c.msg(fmt.Sprintf("Please Select Room first"))
+				}
 			case "/ready":
 				if c.room.host == c.conn.RemoteAddr().String() {
 					if c.room.deck.DeckID == 0 {
