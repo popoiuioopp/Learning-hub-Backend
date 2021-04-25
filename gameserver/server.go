@@ -229,6 +229,7 @@ func ListDecks(c *client) {
 		}
 		c.msg(fmt.Sprintf("%s : %s\n", deckID, deckName))
 	}
+	rows.Close()
 }
 
 ////////////Check that deck name is already existed or not////////////////////////////
@@ -246,6 +247,7 @@ func checkDeckExist(deckname string) int {
 			return 1
 		}
 	}
+	rows.Close()
 	return result
 }
 
@@ -264,6 +266,7 @@ func checkDeckIdExist(deckid int) int {
 			return 0
 		}
 	}
+	rows.Close()
 	return 1
 }
 
@@ -288,6 +291,7 @@ func checkDeckId(deckname string) (int, error) {
 			return 0, err
 		}
 	}
+	rows.Close()
 	return checkid, nil
 }
 
@@ -426,6 +430,7 @@ func (s *server) setroomdeck(c *client, deckid string) {
 							return
 						}
 					}
+					rows.Close()
 					c.room.deck.FcArray = &fcArray
 
 					if len(*c.room.deck.FcArray) == 0 {
